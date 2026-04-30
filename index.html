@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Loon Calculator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 24px 16px;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    .subtitle {
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-bottom: 28px;
+    }
+
+    .card {
+      background: #1e2130;
+      border: 1px solid #2d3348;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .card h2 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 16px;
+    }
+
+    .settings-row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+      min-width: 140px;
+    }
+
+    label {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      font-weight: 500;
+    }
+
+    input[type="number"],
+    input[type="date"],
+    input[type="time"],
+    select {
+      background: #0f1117;
+      border: 1px solid #2d3348;
+      border-radius: 8px;
+      color: #e2e8f0;
+      padding: 9px 12px;
+      font-size: 0.9rem;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input:focus, select:focus {
+      border-color: #6366f1;
+    }
+
+    .add-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr auto;
+      gap: 10px;
+      align-items: end;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 640px) {
+      .add-row { grid-template-columns: 1fr 1fr; }
+      .add-row .btn-add { grid-column: 1 / -1; }
+    }
+
+    .btn {
+      border: none;
+      border-radius: 8px;
+      padding: 9px 16px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s, background 0.15s;
+      white-space: nowrap;
+    }
+    .btn:hover { opacity: 0.85; }
+
+    .btn-add { background: #6366f1; color: #fff; width: 100%; }
+    .btn-del { background: #3f1a1a; color: #f87171; padding: 6px 10px; font-size: 0.8rem; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    th {
+      text-align: left;
+      padding: 8px 10px;
+      color: #64748b;
+      font-weight: 500;
+      border-bottom: 1px solid #2d3348;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    td {
+      padding: 10px 10px;
+      border-bottom: 1px solid #1a1f2e;
+      color: #cbd5e1;
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #252a3a; }
+
+    .hours-cell { color: #a5b4fc; font-weight: 600; }
+
+    .empty-state {
+      text-align: center;
+      padding: 32px;
+      color: #374151;
+      font-size: 0.9rem;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+    }
+
+    .stat {
+      background: #0f1117;
+      border: 1px solid #2d3348;
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .stat-label {
+      font-size: 0.75rem;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+    .stat-value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .stat-value.green { color: #34d399; }
+    .stat-value.purple { color: #a5b4fc; }
+    .stat-value.yellow { color: #fbbf24; }
+
+    .month-nav {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .month-nav button {
+      background: #2d3348;
+      border: none;
+      color: #e2e8f0;
+      border-radius: 6px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .month-nav button:hover { background: #3d4460; }
+    .month-label {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #e2e8f0;
+      min-width: 140px;
+      text-align: center;
+    }
+
+    .tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      padding: 2px 7px;
+      border-radius: 20px;
+      background: #1e3a5f;
+      color: #60a5fa;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Loon Calculator</h1>
+<p class="subtitle">Vul je uren in en zie wat je verdient</p>
+
+<!-- Settings -->
+<div class="card">
+  <h2>Instellingen</h2>
+  <div class="settings-row">
+    <div class="field">
+      <label>Uurloon (€)</label>
+      <input type="number" id="hourlyRate" value="16.50" step="0.01" min="0" />
+    </div>
+    <div class="field">
+      <label>Vakantiegeld (%)</label>
+      <input type="number" id="vacationPct" value="8" step="0.1" min="0" />
+    </div>
+  </div>
+</div>
+
+<!-- Add shift -->
+<div class="card">
+  <h2>Dienst toevoegen</h2>
+  <div class="add-row">
+    <div class="field">
+      <label>Datum</label>
+      <input type="date" id="shiftDate" />
+    </div>
+    <div class="field">
+      <label>Begintijd</label>
+      <input type="time" id="shiftStart" />
+    </div>
+    <div class="field">
+      <label>Eindtijd</label>
+      <input type="time" id="shiftEnd" />
+    </div>
+    <div class="field">
+      <label>Pauze (min)</label>
+      <input type="number" id="shiftBreak" value="30" min="0" step="5" />
+    </div>
+    <button class="btn btn-add btn-add" onclick="addShift()">+ Toevoegen</button>
+  </div>
+  <div id="addError" style="color:#f87171;font-size:0.82rem;margin-top:10px;display:none;"></div>
+</div>
+
+<!-- Month view -->
+<div class="card">
+  <div class="month-nav">
+    <button onclick="prevMonth()">&#8592;</button>
+    <span class="month-label" id="monthLabel"></span>
+    <button onclick="nextMonth()">&#8594;</button>
+  </div>
+
+  <div id="tableWrapper">
+    <div class="empty-state">Nog geen diensten voor deze maand.</div>
+  </div>
+</div>
+
+<!-- Summary -->
+<div class="card">
+  <h2>Samenvatting <span class="tag" id="summaryMonth"></span></h2>
+  <div class="summary-grid">
+    <div class="stat">
+      <div class="stat-label">Gewerkte uren</div>
+      <div class="stat-value purple" id="totalHours">0u 0m</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Bruto loon</div>
+      <div class="stat-value" id="grossPay">€ 0,00</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Vakantiegeld (8%)</div>
+      <div class="stat-value yellow" id="vacationPay">€ 0,00</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Totaal</div>
+      <div class="stat-value green" id="totalPay">€ 0,00</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY = 'wage_shifts';
+
+  let shifts = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  let currentYear, currentMonth;
+
+  function init() {
+    const now = new Date();
+    currentYear = now.getFullYear();
+    currentMonth = now.getMonth();
+    document.getElementById('shiftDate').value = now.toISOString().slice(0, 10);
+    render();
+  }
+
+  function saveShifts() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(shifts));
+  }
+
+  function addShift() {
+    const date  = document.getElementById('shiftDate').value;
+    const start = document.getElementById('shiftStart').value;
+    const end   = document.getElementById('shiftEnd').value;
+    const brk   = parseInt(document.getElementById('shiftBreak').value) || 0;
+    const err   = document.getElementById('addError');
+
+    if (!date || !start || !end) {
+      showError('Vul datum, begintijd en eindtijd in.'); return;
+    }
+
+    const startMin = toMinutes(start);
+    let endMin = toMinutes(end);
+    if (endMin <= startMin) endMin += 1440; // overnight
+
+    const paidMin = endMin - startMin - brk;
+    if (paidMin <= 0) {
+      showError('Betaalde uren zijn 0 of negatief. Controleer je tijden en pauze.'); return;
+    }
+
+    err.style.display = 'none';
+    shifts.push({ date, start, end, brk, paidMin });
+    shifts.sort((a, b) => a.date.localeCompare(b.date));
+    saveShifts();
+
+    // Switch view to the month of added shift
+    const d = new Date(date + 'T00:00:00');
+    currentYear = d.getFullYear();
+    currentMonth = d.getMonth();
+    render();
+  }
+
+  function deleteShift(idx) {
+    // idx is the global index in shifts array
+    shifts.splice(idx, 1);
+    saveShifts();
+    render();
+  }
+
+  function toMinutes(t) {
+    const [h, m] = t.split(':').map(Number);
+    return h * 60 + m;
+  }
+
+  function fmtHours(min) {
+    const h = Math.floor(min / 60);
+    const m = min % 60;
+    return `${h}u ${m}m`;
+  }
+
+  function fmtEur(n) {
+    return '€ ' + n.toFixed(2).replace('.', ',');
+  }
+
+  function monthShifts() {
+    return shifts
+      .map((s, i) => ({ ...s, globalIdx: i }))
+      .filter(s => {
+        const d = new Date(s.date + 'T00:00:00');
+        return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
+      });
+  }
+
+  function prevMonth() {
+    currentMonth--;
+    if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+    render();
+  }
+
+  function nextMonth() {
+    currentMonth++;
+    if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+    render();
+  }
+
+  function render() {
+    const MONTHS = ['Januari','Februari','Maart','April','Mei','Juni',
+                    'Juli','Augustus','September','Oktober','November','December'];
+    const label = `${MONTHS[currentMonth]} ${currentYear}`;
+    document.getElementById('monthLabel').textContent = label;
+    document.getElementById('summaryMonth').textContent = label;
+
+    const ms = monthShifts();
+    const wrapper = document.getElementById('tableWrapper');
+
+    if (ms.length === 0) {
+      wrapper.innerHTML = '<div class="empty-state">Nog geen diensten voor deze maand.</div>';
+    } else {
+      let rows = ms.map(s => `
+        <tr>
+          <td>${formatDate(s.date)}</td>
+          <td>${s.start} – ${s.end}</td>
+          <td>${s.brk} min</td>
+          <td class="hours-cell">${fmtHours(s.paidMin)}</td>
+          <td>${fmtEur(calcGross(s.paidMin))}</td>
+          <td><button class="btn btn-del" onclick="deleteShift(${s.globalIdx})">Verwijder</button></td>
+        </tr>`).join('');
+
+      wrapper.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Datum</th><th>Tijden</th><th>Pauze</th><th>Betaalde uren</th><th>Bruto</th><th></th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+    }
+
+    // Summary
+    const rate = parseFloat(document.getElementById('hourlyRate').value) || 16.50;
+    const vacPct = parseFloat(document.getElementById('vacationPct').value) / 100 || 0.08;
+
+    const totalMin = ms.reduce((a, s) => a + s.paidMin, 0);
+    const gross = (totalMin / 60) * rate;
+    const vac = gross * vacPct;
+    const total = gross + vac;
+
+    document.getElementById('totalHours').textContent = fmtHours(totalMin);
+    document.getElementById('grossPay').textContent = fmtEur(gross);
+    document.getElementById('vacationPay').textContent = fmtEur(vac);
+    document.getElementById('totalPay').textContent = fmtEur(total);
+  }
+
+  function calcGross(paidMin) {
+    const rate = parseFloat(document.getElementById('hourlyRate').value) || 16.50;
+    return (paidMin / 60) * rate;
+  }
+
+  function formatDate(dateStr) {
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short' });
+  }
+
+  function showError(msg) {
+    const err = document.getElementById('addError');
+    err.textContent = msg;
+    err.style.display = 'block';
+  }
+
+  // Recalculate when settings change
+  document.getElementById('hourlyRate').addEventListener('input', render);
+  document.getElementById('vacationPct').addEventListener('input', render);
+
+  init();
+</script>
+</body>
+</html>
