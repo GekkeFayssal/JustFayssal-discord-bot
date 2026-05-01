@@ -445,10 +445,52 @@
 
 <!-- ── TAB 4: Totaal ── -->
 <div class="panel" id="p-totaal">
-  <div class="card">
-    <div class="card-title" style="color:#fcd34d;">Komt eraan — stap 4</div>
-    <p style="color:var(--muted);font-size:0.85rem;">Totaaloverzicht wordt in de volgende stap gebouwd.</p>
+
+  <div class="card" style="text-align:center;padding:28px 20px;margin-bottom:12px;">
+    <div class="stat-lbl" style="color:#6ee7b7;margin-bottom:10px;">Totaal te ontvangen</div>
+    <div id="t-grand" style="font-size:3rem;font-weight:900;letter-spacing:-1.5px;background:linear-gradient(120deg,#34d399,#10b981);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;">€ 0,00</div>
+    <div id="t-period" style="font-size:0.78rem;color:var(--muted);margin-top:8px;"></div>
   </div>
+
+  <div class="card">
+    <div class="card-title">Uitsplitsing</div>
+    <div class="brow">
+      <span class="brow-lbl">Bruto uurloon</span>
+      <span class="brow-val" id="t-gross">€ 0,00</span>
+    </div>
+    <div class="brow">
+      <span class="brow-lbl" id="t-vac-lbl">Vakantiegeld (8%)</span>
+      <span class="brow-val" style="color:#fbbf24;" id="t-vac">€ 0,00</span>
+    </div>
+    <div class="brow">
+      <span class="brow-lbl">Extra's (fooi / bonus)</span>
+      <span class="brow-val" style="color:#60a5fa;" id="t-ext">€ 0,00</span>
+    </div>
+    <div class="brow" style="padding-top:16px;margin-top:4px;">
+      <span style="font-size:1rem;font-weight:700;color:var(--text);">Totaal</span>
+      <span style="font-size:1.3rem;font-weight:800;color:#34d399;" id="t-total">€ 0,00</span>
+    </div>
+  </div>
+
+  <div class="stats2">
+    <div class="stat purple">
+      <div class="stat-lbl">Uren gewerkt</div>
+      <div class="stat-val" id="t-uren">0u 0m</div>
+    </div>
+    <div class="stat blue">
+      <div class="stat-lbl">Diensten</div>
+      <div class="stat-val" id="t-diensten">0</div>
+    </div>
+    <div class="stat amber">
+      <div class="stat-lbl">Vakantiegeld</div>
+      <div class="stat-val" id="t-vacstat">€ 0,00</div>
+    </div>
+    <div class="stat green">
+      <div class="stat-lbl">Extra's</div>
+      <div class="stat-val" id="t-extstat">€ 0,00</div>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -623,6 +665,22 @@
         </tr>`).join('')}
         </tbody></table>`;
     }
+
+    // ── Totaal tab ──
+    const vac   = gross * vacpct;
+    const total = gross + vac + extSum;
+
+    document.getElementById('t-grand').textContent    = fmtE(total);
+    document.getElementById('t-period').textContent   = `${MO[mo]} ${yr}`;
+    document.getElementById('t-gross').textContent    = fmtE(gross);
+    document.getElementById('t-vac-lbl').textContent  = `Vakantiegeld (${(vacpct*100).toFixed(1)}%)`;
+    document.getElementById('t-vac').textContent      = fmtE(vac);
+    document.getElementById('t-ext').textContent      = fmtE(extSum);
+    document.getElementById('t-total').textContent    = fmtE(total);
+    document.getElementById('t-uren').textContent     = fmtH(totMin);
+    document.getElementById('t-diensten').textContent = ms.length;
+    document.getElementById('t-vacstat').textContent  = fmtE(vac);
+    document.getElementById('t-extstat').textContent  = fmtE(extSum);
   }
 
   document.getElementById('rate').addEventListener('input', render);
