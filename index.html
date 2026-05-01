@@ -268,6 +268,32 @@
 
     /* ── Extra stat full-width ── */
     .stat.full { grid-column: 1 / -1; }
+
+    /* ── Breakdown rows ── */
+    .brow {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.88rem;
+    }
+    .brow:last-child { border-bottom: none; }
+    .brow-lbl { color: #94a3b8; }
+    .brow-val { font-weight: 700; color: #fff; }
+
+    /* ── Month grid ── */
+    .mg-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 8px;
+      text-align: center;
+    }
+    .mg-name { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; letter-spacing: 0.05em; }
+    .mg-val  { font-size: 0.88rem; font-weight: 700; color: #fbbf24; }
+    .mg-item.cur { border-color: rgba(245,158,11,.4); background: rgba(245,158,11,.06); }
+    .mg-item.empty .mg-val { color: var(--border); }
   </style>
 </head>
 <body>
@@ -398,10 +424,23 @@
 
 <!-- ── TAB 3: Vakantiegeld ── -->
 <div class="panel" id="p-vakantie">
-  <div class="card">
-    <div class="card-title" style="color:#fcd34d;">Komt eraan — stap 3</div>
-    <p style="color:var(--muted);font-size:0.85rem;">Vakantiegeld overzicht wordt in de volgende stap gebouwd.</p>
+
+  <div class="card" style="text-align:center; padding: 28px 20px;">
+    <div class="stat-lbl" style="color:#fcd34d; margin-bottom:10px;">Totaal gespaard dit jaar</div>
+    <div id="vac-year" style="font-size:2.8rem;font-weight:900;letter-spacing:-1px;background:linear-gradient(120deg,#fbbf24,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">€ 0,00</div>
+    <div style="font-size:0.78rem;color:var(--muted);margin-top:6px;" id="vac-year-sub"></div>
   </div>
+
+  <div class="card">
+    <div class="card-title">Deze maand</div>
+    <div style="display:flex;flex-direction:column;gap:0;" id="vac-month-breakdown"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Per maand <span id="vac-year-num" style="color:var(--muted);font-weight:400;"></span></div>
+    <div id="vac-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;"></div>
+  </div>
+
 </div>
 
 <!-- ── TAB 4: Totaal ── -->
@@ -531,6 +570,35 @@
         </tr>`).join('')}
         </tbody></table>`;
     }
+
+    // ── Vakantiegeld tab ──
+    const MO_S = ['Jan','Feb','Mrt','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];
+    const yearVac = shifts
+      .filter(s => new Date(s.date+'T00:00:00').getFullYear() === yr)
+      .reduce((a,s) => a + (s.paid/60)*rate*vacpct, 0);
+
+    document.getElementById('vac-year').textContent = fmtE(yearVac);
+    document.getElementById('vac-year-sub').textContent = `over alle maanden in ${yr}`;
+    document.getElementById('vac-year-num').textContent = yr;
+
+    document.getElementById('vac-month-breakdown').innerHTML = `
+      <div class="brow"><span class="brow-lbl">Bruto uurloon deze maand</span><span class="brow-val">${fmtE(gross)}</span></div>
+      <div class="brow"><span class="brow-lbl">Vakantiegeld (${(vacpct*100).toFixed(1)}%)</span><span class="brow-val" style="color:#fbbf24;">${fmtE(gross*vacpct)}</span></div>`;
+
+    const perMo = Array(12).fill(0);
+    shifts.forEach(s => {
+      const d = new Date(s.date+'T00:00:00');
+      if (d.getFullYear() === yr) perMo[d.getMonth()] += (s.paid/60)*rate*vacpct;
+    });
+    document.getElementById('vac-grid').innerHTML = MO_S.map((m,i) => {
+      const val = perMo[i];
+      const cur = i === mo;
+      const empty = val === 0;
+      return `<div class="mg-item${cur?' cur':''}${empty?' empty':''}">
+        <div class="mg-name">${m}</div>
+        <div class="mg-val">${empty ? '–' : fmtE(val)}</div>
+      </div>`;
+    }).join('');
 
     // ── Extra's tab ──
     document.getElementById('e-total').textContent = fmtE(extSum);
