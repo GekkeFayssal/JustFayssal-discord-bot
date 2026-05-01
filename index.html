@@ -508,8 +508,13 @@
     }));
     localStorage.setItem(SK, JSON.stringify(shifts));
   }
-  // also fix any existing migrated entries that still have paidMin
-  shifts = shifts.map(s => ({ ...s, paid: s.paid ?? s.paidMin ?? 0 }));
+  // fix any entry that still has paidMin instead of paid
+  shifts = shifts.map(s => {
+    const paid = (typeof s.paid === 'number' && !isNaN(s.paid) && s.paid > 0)
+      ? s.paid
+      : (typeof s.paidMin === 'number' && !isNaN(s.paidMin) ? s.paidMin : 0);
+    return { ...s, paid };
+  });
   localStorage.setItem(SK, JSON.stringify(shifts));
 
   let yr, mo;

@@ -1,4 +1,4 @@
-const CACHE = 'loon-calc-v1';
+const CACHE = 'loon-calc-v3';
 const ASSETS = [
   './index.html',
   './manifest.json',
