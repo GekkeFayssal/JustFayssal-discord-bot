@@ -499,9 +499,18 @@
   let shifts = JSON.parse(localStorage.getItem(SK) || '[]');
   let extras = JSON.parse(localStorage.getItem(EK) || '[]');
 
-  // migrate old data
+  // migrate old data (old key used 'paidMin', new uses 'paid')
   const old = localStorage.getItem('wage_shifts');
-  if (old && !shifts.length) { shifts = JSON.parse(old); localStorage.setItem(SK, JSON.stringify(shifts)); }
+  if (old && !shifts.length) {
+    shifts = JSON.parse(old).map(s => ({
+      ...s,
+      paid: s.paid ?? s.paidMin ?? 0
+    }));
+    localStorage.setItem(SK, JSON.stringify(shifts));
+  }
+  // also fix any existing migrated entries that still have paidMin
+  shifts = shifts.map(s => ({ ...s, paid: s.paid ?? s.paidMin ?? 0 }));
+  localStorage.setItem(SK, JSON.stringify(shifts));
 
   let yr, mo;
   const MO = ['Januari','Februari','Maart','April','Mei','Juni','Juli','Augustus','September','Oktober','November','December'];
@@ -566,8 +575,8 @@
   function delExtra(i) { extras.splice(i,1); localStorage.setItem(EK, JSON.stringify(extras)); render(); }
 
   function toMin(t) { const [h,m] = t.split(':').map(Number); return h*60+m; }
-  function fmtH(m) { return `${Math.floor(m/60)}u ${m%60}m`; }
-  function fmtE(n) { return '€ ' + n.toFixed(2).replace('.',','); }
+  function fmtH(m) { m=m||0; return `${Math.floor(m/60)}u ${m%60}m`; }
+  function fmtE(n) { n=n||0; return '€ ' + n.toFixed(2).replace('.',','); }
   function fmtD(s) { return new Date(s+'T00:00:00').toLocaleDateString('nl-NL',{weekday:'short',day:'numeric',month:'short'}); }
   function err(id,msg)  { const e=document.getElementById(id); e.textContent=msg; e.style.display='block'; }
   function noErr(id)    { document.getElementById(id).style.display='none'; }
