@@ -4,12 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Loon Calculator</title>
-
-  <!-- PWA -->
   <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#6366f1" />
-
-  <!-- iOS / iPhone -->
+  <meta name="theme-color" content="#7c3aed" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Loon Calc" />
@@ -17,454 +13,446 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    :root {
+      --bg:      #07090f;
+      --surface: #0f1220;
+      --surface2:#161b30;
+      --border:  #1e2540;
+      --purple:  #8b5cf6;
+      --blue:    #3b82f6;
+      --green:   #10b981;
+      --amber:   #f59e0b;
+      --red:     #ef4444;
+      --text:    #e2e8f0;
+      --muted:   #64748b;
+    }
+
     body {
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      background: #0f1117;
-      color: #e2e8f0;
+      font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
-      padding: max(24px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+      padding-top: max(env(safe-area-inset-top), 16px);
+      padding-bottom: max(env(safe-area-inset-bottom), 24px);
     }
 
-    h1 {
-      font-size: 1.6rem;
-      font-weight: 700;
-      color: #fff;
-      margin-bottom: 4px;
+    /* ── Header ── */
+    .header { padding: 20px 20px 0; margin-bottom: 20px; }
+    .header h1 {
+      font-size: 1.8rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(120deg, #a78bfa 0%, #60a5fa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
-    .subtitle {
-      font-size: 0.85rem;
-      color: #64748b;
-      margin-bottom: 28px;
-    }
+    .header p { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
 
-    .card {
-      background: #1e2130;
-      border: 1px solid #2d3348;
-      border-radius: 12px;
-      padding: 20px;
+    /* ── Settings bar ── */
+    .settings-bar {
+      display: flex;
+      gap: 10px;
+      padding: 0 20px;
       margin-bottom: 16px;
     }
+    .settings-bar .field { flex: 1; }
 
-    .card h2 {
+    /* ── Month nav ── */
+    .month-nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    .month-nav button {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .month-nav button:active { opacity: 0.6; }
+    .month-nav span {
       font-size: 0.95rem;
-      font-weight: 600;
-      color: #94a3b8;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 16px;
+      font-weight: 700;
+      min-width: 150px;
+      text-align: center;
     }
 
-    .settings-row {
+    /* ── Tabs ── */
+    .tabs {
       display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
+      gap: 4px;
+      margin: 0 20px 20px;
+      padding: 4px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
     }
-
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
+    .tab {
       flex: 1;
-      min-width: 140px;
+      padding: 8px 4px;
+      border: none;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.02em;
+      transition: all 0.18s;
+    }
+    .tab.on {
+      background: linear-gradient(135deg, #7c3aed, #2563eb);
+      color: #fff;
+      box-shadow: 0 2px 12px rgba(124,58,237,0.45);
     }
 
-    label {
-      font-size: 0.8rem;
-      color: #94a3b8;
-      font-weight: 500;
+    /* ── Panels ── */
+    .panel { display: none; padding: 0 20px; }
+    .panel.on { display: block; }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::after {
+      content: '';
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(139,92,246,0.5), transparent);
+    }
+    .card-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 14px;
     }
 
-    input[type="number"],
-    input[type="date"],
-    input[type="time"],
-    select {
-      background: #0f1117;
-      border: 1px solid #2d3348;
-      border-radius: 8px;
-      color: #e2e8f0;
-      padding: 9px 12px;
+    /* ── Form ── */
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .span2 { grid-column: 1 / -1; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.72rem; font-weight: 600; color: var(--muted); }
+
+    input, select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      padding: 10px 12px;
       font-size: 0.9rem;
       width: 100%;
       outline: none;
-      transition: border-color 0.15s;
+      -webkit-appearance: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
     }
     input:focus, select:focus {
-      border-color: #6366f1;
+      border-color: var(--purple);
+      box-shadow: 0 0 0 3px rgba(139,92,246,0.18);
     }
 
-    .add-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr 1fr auto;
-      gap: 10px;
-      align-items: end;
-      flex-wrap: wrap;
-    }
-
-    @media (max-width: 640px) {
-      .add-row { grid-template-columns: 1fr 1fr; }
-      .add-row .btn-add { grid-column: 1 / -1; }
-    }
-
-    .btn {
-      border: none;
-      border-radius: 8px;
-      padding: 9px 16px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: opacity 0.15s, background 0.15s;
-      white-space: nowrap;
-    }
-    .btn:hover { opacity: 0.85; }
-
-    .btn-add { background: #6366f1; color: #fff; width: 100%; }
-    .btn-del { background: #3f1a1a; color: #f87171; padding: 6px 10px; font-size: 0.8rem; }
-
-    table {
+    /* ── Buttons ── */
+    .btn-add {
       width: 100%;
-      border-collapse: collapse;
-      font-size: 0.88rem;
+      padding: 12px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #7c3aed, #2563eb);
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(124,58,237,0.4);
+      letter-spacing: 0.02em;
     }
+    .btn-add:active { opacity: 0.8; }
+
+    .btn-del {
+      border: 1px solid rgba(239,68,68,0.25);
+      background: rgba(239,68,68,0.1);
+      color: var(--red);
+      border-radius: 8px;
+      padding: 5px 10px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .err { color: var(--red); font-size: 0.78rem; margin-top: 8px; display: none; }
+
+    /* ── Stat cards ── */
+    .stats2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+
+    .stat {
+      border-radius: 14px;
+      padding: 16px;
+    }
+    .stat.purple { background: linear-gradient(135deg,rgba(124,58,237,.22),rgba(124,58,237,.05)); border: 1px solid rgba(124,58,237,.3); }
+    .stat.blue   { background: linear-gradient(135deg,rgba(37,99,235,.22),rgba(37,99,235,.05));  border: 1px solid rgba(37,99,235,.3); }
+    .stat.green  { background: linear-gradient(135deg,rgba(16,185,129,.22),rgba(16,185,129,.05));border: 1px solid rgba(16,185,129,.3); }
+    .stat.amber  { background: linear-gradient(135deg,rgba(245,158,11,.22),rgba(245,158,11,.05));border: 1px solid rgba(245,158,11,.3); }
+
+    .stat-lbl {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+    .stat.purple .stat-lbl { color: #c4b5fd; }
+    .stat.blue   .stat-lbl { color: #93c5fd; }
+    .stat.green  .stat-lbl { color: #6ee7b7; }
+    .stat.amber  .stat-lbl { color: #fcd34d; }
+
+    .stat-val {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.5px;
+    }
+    .stat-sub { font-size: 0.68rem; color: var(--muted); margin-top: 3px; }
+
+    /* ── Table ── */
+    .tbl-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
     th {
       text-align: left;
-      padding: 8px 10px;
-      color: #64748b;
-      font-weight: 500;
-      border-bottom: 1px solid #2d3348;
-      font-size: 0.78rem;
+      padding: 7px 8px;
+      font-size: 0.67rem;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
     }
     td {
-      padding: 10px 10px;
-      border-bottom: 1px solid #1a1f2e;
+      padding: 10px 8px;
+      border-bottom: 1px solid rgba(30,37,64,.5);
       color: #cbd5e1;
       vertical-align: middle;
     }
     tr:last-child td { border-bottom: none; }
-    tr:hover td { background: #252a3a; }
+    .c-purple { color: #a78bfa; font-weight: 700; }
+    .c-green  { color: #34d399; font-weight: 700; }
 
-    .hours-cell { color: #a5b4fc; font-weight: 600; }
-
-    .empty-state {
-      text-align: center;
-      padding: 32px;
-      color: #374151;
-      font-size: 0.9rem;
-    }
-
-    .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 12px;
-    }
-
-    .stat {
-      background: #0f1117;
-      border: 1px solid #2d3348;
-      border-radius: 10px;
-      padding: 16px;
-    }
-    .stat-label {
-      font-size: 0.75rem;
-      color: #64748b;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 6px;
-    }
-    .stat-value {
-      font-size: 1.35rem;
-      font-weight: 700;
-      color: #fff;
-    }
-    .stat-value.green { color: #34d399; }
-    .stat-value.purple { color: #a5b4fc; }
-    .stat-value.yellow { color: #fbbf24; }
-
-    .month-nav {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-    .month-nav button {
-      background: #2d3348;
-      border: none;
-      color: #e2e8f0;
-      border-radius: 6px;
-      padding: 6px 12px;
-      cursor: pointer;
-      font-size: 0.9rem;
-    }
-    .month-nav button:hover { background: #3d4460; }
-    .month-label {
-      font-size: 1rem;
-      font-weight: 600;
-      color: #e2e8f0;
-      min-width: 140px;
-      text-align: center;
-    }
-
-    .tag {
-      display: inline-block;
-      font-size: 0.7rem;
-      padding: 2px 7px;
-      border-radius: 20px;
-      background: #1e3a5f;
-      color: #60a5fa;
-      font-weight: 600;
-    }
+    .empty { text-align: center; padding: 32px; color: var(--border); font-size: 0.85rem; }
   </style>
 </head>
 <body>
 
-<h1>Loon Calculator</h1>
-<p class="subtitle">Vul je uren in en zie wat je verdient</p>
+<div class="header">
+  <h1>Loon Calc</h1>
+  <p>Jouw persoonlijke loonberekening</p>
+</div>
 
-<!-- Settings -->
-<div class="card">
-  <h2>Instellingen</h2>
-  <div class="settings-row">
-    <div class="field">
-      <label>Uurloon (€)</label>
-      <input type="number" id="hourlyRate" value="16.50" step="0.01" min="0" />
-    </div>
-    <div class="field">
-      <label>Vakantiegeld (%)</label>
-      <input type="number" id="vacationPct" value="8" step="0.1" min="0" />
-    </div>
+<div class="settings-bar">
+  <div class="field">
+    <label>Uurloon (€)</label>
+    <input type="number" id="rate" value="16.50" step="0.01" min="0" />
+  </div>
+  <div class="field">
+    <label>Vakantiegeld (%)</label>
+    <input type="number" id="vacpct" value="8" step="0.1" min="0" />
   </div>
 </div>
 
-<!-- Add shift -->
-<div class="card">
-  <h2>Dienst toevoegen</h2>
-  <div class="add-row">
-    <div class="field">
-      <label>Datum</label>
-      <input type="date" id="shiftDate" />
-    </div>
-    <div class="field">
-      <label>Begintijd</label>
-      <input type="time" id="shiftStart" />
-    </div>
-    <div class="field">
-      <label>Eindtijd</label>
-      <input type="time" id="shiftEnd" />
-    </div>
-    <div class="field">
-      <label>Pauze (min)</label>
-      <input type="number" id="shiftBreak" value="30" min="0" step="5" />
-    </div>
-    <button class="btn btn-add btn-add" onclick="addShift()">+ Toevoegen</button>
-  </div>
-  <div id="addError" style="color:#f87171;font-size:0.82rem;margin-top:10px;display:none;"></div>
+<div class="month-nav">
+  <button onclick="prevMonth()">&#8592;</button>
+  <span id="monthLabel"></span>
+  <button onclick="nextMonth()">&#8594;</button>
 </div>
 
-<!-- Month view -->
-<div class="card">
-  <div class="month-nav">
-    <button onclick="prevMonth()">&#8592;</button>
-    <span class="month-label" id="monthLabel"></span>
-    <button onclick="nextMonth()">&#8594;</button>
+<div class="tabs">
+  <button class="tab on"  onclick="go('diensten',this)">Diensten</button>
+  <button class="tab"     onclick="go('extras',this)">Extra's</button>
+  <button class="tab"     onclick="go('vakantie',this)">Vakantiegeld</button>
+  <button class="tab"     onclick="go('totaal',this)">Totaal</button>
+</div>
+
+<!-- ── TAB 1: Diensten ── -->
+<div class="panel on" id="p-diensten">
+
+  <div class="card">
+    <div class="card-title">Dienst toevoegen</div>
+    <div class="grid2">
+      <div class="field">
+        <label>Datum</label>
+        <input type="date" id="sDate" />
+      </div>
+      <div class="field">
+        <label>Pauze (min)</label>
+        <input type="number" id="sBreak" value="30" min="0" step="5" />
+      </div>
+      <div class="field">
+        <label>Begintijd</label>
+        <input type="time" id="sStart" />
+      </div>
+      <div class="field">
+        <label>Eindtijd</label>
+        <input type="time" id="sEnd" />
+      </div>
+      <div class="span2">
+        <button class="btn-add" onclick="addShift()">+ Dienst toevoegen</button>
+      </div>
+    </div>
+    <div class="err" id="sErr"></div>
   </div>
 
-  <div id="tableWrapper">
-    <div class="empty-state">Nog geen diensten voor deze maand.</div>
+  <div class="stats2">
+    <div class="stat purple">
+      <div class="stat-lbl">Uren gewerkt</div>
+      <div class="stat-val" id="d-uren">0u 0m</div>
+      <div class="stat-sub">deze maand</div>
+    </div>
+    <div class="stat blue">
+      <div class="stat-lbl">Bruto loon</div>
+      <div class="stat-val" id="d-gross">€ 0</div>
+      <div class="stat-sub">excl. vakantiegeld</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Diensten deze maand</div>
+    <div class="tbl-wrap" id="shiftTbl"><div class="empty">Nog geen diensten</div></div>
   </div>
 </div>
 
-<!-- Summary -->
-<div class="card">
-  <h2>Samenvatting <span class="tag" id="summaryMonth"></span></h2>
-  <div class="summary-grid">
-    <div class="stat">
-      <div class="stat-label">Gewerkte uren</div>
-      <div class="stat-value purple" id="totalHours">0u 0m</div>
-    </div>
-    <div class="stat">
-      <div class="stat-label">Bruto loon</div>
-      <div class="stat-value" id="grossPay">€ 0,00</div>
-    </div>
-    <div class="stat">
-      <div class="stat-label">Vakantiegeld (8%)</div>
-      <div class="stat-value yellow" id="vacationPay">€ 0,00</div>
-    </div>
-    <div class="stat">
-      <div class="stat-label">Totaal</div>
-      <div class="stat-value green" id="totalPay">€ 0,00</div>
-    </div>
+<!-- ── TAB 2: Extra's ── -->
+<div class="panel" id="p-extras">
+  <div class="card">
+    <div class="card-title" style="color:#fcd34d;">Komt eraan — stap 2</div>
+    <p style="color:var(--muted);font-size:0.85rem;">Extra's (fooi / bonus) worden in de volgende stap gebouwd.</p>
+  </div>
+</div>
+
+<!-- ── TAB 3: Vakantiegeld ── -->
+<div class="panel" id="p-vakantie">
+  <div class="card">
+    <div class="card-title" style="color:#fcd34d;">Komt eraan — stap 3</div>
+    <p style="color:var(--muted);font-size:0.85rem;">Vakantiegeld overzicht wordt in de volgende stap gebouwd.</p>
+  </div>
+</div>
+
+<!-- ── TAB 4: Totaal ── -->
+<div class="panel" id="p-totaal">
+  <div class="card">
+    <div class="card-title" style="color:#fcd34d;">Komt eraan — stap 4</div>
+    <p style="color:var(--muted);font-size:0.85rem;">Totaaloverzicht wordt in de volgende stap gebouwd.</p>
   </div>
 </div>
 
 <script>
-  const STORAGE_KEY = 'wage_shifts';
+  const SK = 'loon_shifts_v2';
+  let shifts = JSON.parse(localStorage.getItem(SK) || '[]');
 
-  let shifts = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-  let currentYear, currentMonth;
+  // migrate old data
+  const old = localStorage.getItem('wage_shifts');
+  if (old && !shifts.length) { shifts = JSON.parse(old); localStorage.setItem(SK, JSON.stringify(shifts)); }
+
+  let yr, mo;
+  const MO = ['Januari','Februari','Maart','April','Mei','Juni','Juli','Augustus','September','Oktober','November','December'];
 
   function init() {
-    const now = new Date();
-    currentYear = now.getFullYear();
-    currentMonth = now.getMonth();
-    document.getElementById('shiftDate').value = now.toISOString().slice(0, 10);
+    const n = new Date();
+    yr = n.getFullYear(); mo = n.getMonth();
+    document.getElementById('sDate').value = n.toISOString().slice(0,10);
     render();
   }
 
-  function saveShifts() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(shifts));
+  function go(id, btn) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+    document.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
+    document.getElementById('p-' + id).classList.add('on');
+    btn.classList.add('on');
   }
+
+  function prevMonth() { mo--; if (mo < 0) { mo = 11; yr--; } render(); }
+  function nextMonth() { mo++; if (mo > 11) { mo = 0; yr++; } render(); }
 
   function addShift() {
-    const date  = document.getElementById('shiftDate').value;
-    const start = document.getElementById('shiftStart').value;
-    const end   = document.getElementById('shiftEnd').value;
-    const brk   = parseInt(document.getElementById('shiftBreak').value) || 0;
-    const err   = document.getElementById('addError');
-
-    if (!date || !start || !end) {
-      showError('Vul datum, begintijd en eindtijd in.'); return;
-    }
-
-    const startMin = toMinutes(start);
-    let endMin = toMinutes(end);
-    if (endMin <= startMin) endMin += 1440; // overnight
-
-    const paidMin = endMin - startMin - brk;
-    if (paidMin <= 0) {
-      showError('Betaalde uren zijn 0 of negatief. Controleer je tijden en pauze.'); return;
-    }
-
-    err.style.display = 'none';
-    shifts.push({ date, start, end, brk, paidMin });
-    shifts.sort((a, b) => a.date.localeCompare(b.date));
-    saveShifts();
-
-    // Switch view to the month of added shift
-    const d = new Date(date + 'T00:00:00');
-    currentYear = d.getFullYear();
-    currentMonth = d.getMonth();
+    const date  = document.getElementById('sDate').value;
+    const start = document.getElementById('sStart').value;
+    const end   = document.getElementById('sEnd').value;
+    const brk   = parseInt(document.getElementById('sBreak').value) || 0;
+    if (!date || !start || !end) { err('sErr','Vul datum, begin- en eindtijd in.'); return; }
+    const sm = toMin(start);
+    let   em = toMin(end);
+    if (em <= sm) em += 1440;
+    const paid = em - sm - brk;
+    if (paid <= 0) { err('sErr','Betaalde uren zijn 0 of negatief.'); return; }
+    noErr('sErr');
+    shifts.push({ date, start, end, brk, paid });
+    shifts.sort((a,b) => a.date.localeCompare(b.date));
+    localStorage.setItem(SK, JSON.stringify(shifts));
+    const d = new Date(date + 'T00:00:00'); yr = d.getFullYear(); mo = d.getMonth();
     render();
   }
 
-  function deleteShift(idx) {
-    // idx is the global index in shifts array
-    shifts.splice(idx, 1);
-    saveShifts();
-    render();
-  }
+  function delShift(i) { shifts.splice(i,1); localStorage.setItem(SK, JSON.stringify(shifts)); render(); }
 
-  function toMinutes(t) {
-    const [h, m] = t.split(':').map(Number);
-    return h * 60 + m;
-  }
-
-  function fmtHours(min) {
-    const h = Math.floor(min / 60);
-    const m = min % 60;
-    return `${h}u ${m}m`;
-  }
-
-  function fmtEur(n) {
-    return '€ ' + n.toFixed(2).replace('.', ',');
-  }
-
-  function monthShifts() {
-    return shifts
-      .map((s, i) => ({ ...s, globalIdx: i }))
-      .filter(s => {
-        const d = new Date(s.date + 'T00:00:00');
-        return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
-      });
-  }
-
-  function prevMonth() {
-    currentMonth--;
-    if (currentMonth < 0) { currentMonth = 11; currentYear--; }
-    render();
-  }
-
-  function nextMonth() {
-    currentMonth++;
-    if (currentMonth > 11) { currentMonth = 0; currentYear++; }
-    render();
-  }
+  function toMin(t) { const [h,m] = t.split(':').map(Number); return h*60+m; }
+  function fmtH(m) { return `${Math.floor(m/60)}u ${m%60}m`; }
+  function fmtE(n) { return '€ ' + n.toFixed(2).replace('.',','); }
+  function fmtD(s) { return new Date(s+'T00:00:00').toLocaleDateString('nl-NL',{weekday:'short',day:'numeric',month:'short'}); }
+  function err(id,msg)  { const e=document.getElementById(id); e.textContent=msg; e.style.display='block'; }
+  function noErr(id)    { document.getElementById(id).style.display='none'; }
 
   function render() {
-    const MONTHS = ['Januari','Februari','Maart','April','Mei','Juni',
-                    'Juli','Augustus','September','Oktober','November','December'];
-    const label = `${MONTHS[currentMonth]} ${currentYear}`;
-    document.getElementById('monthLabel').textContent = label;
-    document.getElementById('summaryMonth').textContent = label;
+    const rate   = parseFloat(document.getElementById('rate').value)   || 16.50;
+    const vacpct = parseFloat(document.getElementById('vacpct').value) / 100 || 0.08;
+    document.getElementById('monthLabel').textContent = `${MO[mo]} ${yr}`;
 
-    const ms = monthShifts();
-    const wrapper = document.getElementById('tableWrapper');
+    const ms = shifts.map((s,i)=>({...s,i})).filter(s=>{
+      const d = new Date(s.date+'T00:00:00');
+      return d.getFullYear()===yr && d.getMonth()===mo;
+    });
 
-    if (ms.length === 0) {
-      wrapper.innerHTML = '<div class="empty-state">Nog geen diensten voor deze maand.</div>';
+    const totMin = ms.reduce((a,s)=>a+s.paid, 0);
+    const gross  = (totMin/60)*rate;
+
+    document.getElementById('d-uren').textContent  = fmtH(totMin);
+    document.getElementById('d-gross').textContent = fmtE(gross);
+
+    if (!ms.length) {
+      document.getElementById('shiftTbl').innerHTML = '<div class="empty">Nog geen diensten deze maand</div>';
     } else {
-      let rows = ms.map(s => `
-        <tr>
-          <td>${formatDate(s.date)}</td>
-          <td>${s.start} – ${s.end}</td>
-          <td>${s.brk} min</td>
-          <td class="hours-cell">${fmtHours(s.paidMin)}</td>
-          <td>${fmtEur(calcGross(s.paidMin))}</td>
-          <td><button class="btn btn-del" onclick="deleteShift(${s.globalIdx})">Verwijder</button></td>
-        </tr>`).join('');
-
-      wrapper.innerHTML = `
-        <table>
-          <thead>
-            <tr>
-              <th>Datum</th><th>Tijden</th><th>Pauze</th><th>Betaalde uren</th><th>Bruto</th><th></th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>`;
+      document.getElementById('shiftTbl').innerHTML = `
+        <table><thead><tr>
+          <th>Datum</th><th>Tijden</th><th>Pauze</th><th>Uren</th><th>Bruto</th><th></th>
+        </tr></thead><tbody>
+        ${ms.map(s=>`<tr>
+          <td>${fmtD(s.date)}</td>
+          <td style="white-space:nowrap">${s.start}–${s.end}</td>
+          <td>${s.brk}m</td>
+          <td class="c-purple">${fmtH(s.paid)}</td>
+          <td class="c-green">${fmtE((s.paid/60)*rate)}</td>
+          <td><button class="btn-del" onclick="delShift(${s.i})">✕</button></td>
+        </tr>`).join('')}
+        </tbody></table>`;
     }
-
-    // Summary
-    const rate = parseFloat(document.getElementById('hourlyRate').value) || 16.50;
-    const vacPct = parseFloat(document.getElementById('vacationPct').value) / 100 || 0.08;
-
-    const totalMin = ms.reduce((a, s) => a + s.paidMin, 0);
-    const gross = (totalMin / 60) * rate;
-    const vac = gross * vacPct;
-    const total = gross + vac;
-
-    document.getElementById('totalHours').textContent = fmtHours(totalMin);
-    document.getElementById('grossPay').textContent = fmtEur(gross);
-    document.getElementById('vacationPay').textContent = fmtEur(vac);
-    document.getElementById('totalPay').textContent = fmtEur(total);
   }
 
-  function calcGross(paidMin) {
-    const rate = parseFloat(document.getElementById('hourlyRate').value) || 16.50;
-    return (paidMin / 60) * rate;
-  }
-
-  function formatDate(dateStr) {
-    const d = new Date(dateStr + 'T00:00:00');
-    return d.toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short' });
-  }
-
-  function showError(msg) {
-    const err = document.getElementById('addError');
-    err.textContent = msg;
-    err.style.display = 'block';
-  }
-
-  // Recalculate when settings change
-  document.getElementById('hourlyRate').addEventListener('input', render);
-  document.getElementById('vacationPct').addEventListener('input', render);
+  document.getElementById('rate').addEventListener('input', render);
+  document.getElementById('vacpct').addEventListener('input', render);
 
   init();
-
-  // Register service worker for offline support
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js');
-  }
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
 </script>
 </body>
 </html>
