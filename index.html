@@ -250,8 +250,24 @@
     tr:last-child td { border-bottom: none; }
     .c-purple { color: #a78bfa; font-weight: 700; }
     .c-green  { color: #34d399; font-weight: 700; }
+    .c-amber  { color: #fbbf24; font-weight: 700; }
 
     .empty { text-align: center; padding: 32px; color: var(--border); font-size: 0.85rem; }
+
+    /* ── Badges ── */
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+    .badge-fooi  { background: rgba(245,158,11,.18);  color: #fbbf24; }
+    .badge-bonus { background: rgba(16,185,129,.18);  color: #34d399; }
+    .badge-other { background: rgba(59,130,246,.18);  color: #60a5fa; }
+
+    /* ── Extra stat full-width ── */
+    .stat.full { grid-column: 1 / -1; }
   </style>
 </head>
 <body>
@@ -335,9 +351,48 @@
 
 <!-- ── TAB 2: Extra's ── -->
 <div class="panel" id="p-extras">
+
   <div class="card">
-    <div class="card-title" style="color:#fcd34d;">Komt eraan — stap 2</div>
-    <p style="color:var(--muted);font-size:0.85rem;">Extra's (fooi / bonus) worden in de volgende stap gebouwd.</p>
+    <div class="card-title">Extra invoeren</div>
+    <div class="grid2">
+      <div class="field">
+        <label>Datum</label>
+        <input type="date" id="eDate" />
+      </div>
+      <div class="field">
+        <label>Type</label>
+        <select id="eType">
+          <option value="fooi">Fooi</option>
+          <option value="bonus">Bonus</option>
+          <option value="other">Anders</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Omschrijving</label>
+        <input type="text" id="eDesc" placeholder="bijv. weekenddienst" />
+      </div>
+      <div class="field">
+        <label>Bedrag (€)</label>
+        <input type="number" id="eAmt" min="0" step="0.01" placeholder="0,00" />
+      </div>
+      <div class="span2">
+        <button class="btn-add" onclick="addExtra()">+ Extra toevoegen</button>
+      </div>
+    </div>
+    <div class="err" id="eErr"></div>
+  </div>
+
+  <div class="stats2">
+    <div class="stat amber full">
+      <div class="stat-lbl">Totaal extra's deze maand</div>
+      <div class="stat-val" id="e-total">€ 0,00</div>
+      <div class="stat-sub" id="e-sub">geen extra's ingevoerd</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Extra's deze maand</div>
+    <div class="tbl-wrap" id="extraTbl"><div class="empty">Nog geen extra's</div></div>
   </div>
 </div>
 
@@ -359,7 +414,9 @@
 
 <script>
   const SK = 'loon_shifts_v2';
+  const EK = 'loon_extras_v1';
   let shifts = JSON.parse(localStorage.getItem(SK) || '[]');
+  let extras = JSON.parse(localStorage.getItem(EK) || '[]');
 
   // migrate old data
   const old = localStorage.getItem('wage_shifts');
@@ -371,7 +428,9 @@
   function init() {
     const n = new Date();
     yr = n.getFullYear(); mo = n.getMonth();
-    document.getElementById('sDate').value = n.toISOString().slice(0,10);
+    const today = n.toISOString().slice(0,10);
+    document.getElementById('sDate').value = today;
+    document.getElementById('eDate').value = today;
     render();
   }
 
@@ -406,6 +465,25 @@
 
   function delShift(i) { shifts.splice(i,1); localStorage.setItem(SK, JSON.stringify(shifts)); render(); }
 
+  function addExtra() {
+    const date = document.getElementById('eDate').value;
+    const type = document.getElementById('eType').value;
+    const desc = document.getElementById('eDesc').value.trim();
+    const amt  = parseFloat(document.getElementById('eAmt').value);
+    if (!date)           { err('eErr','Vul een datum in.'); return; }
+    if (!amt || amt <= 0){ err('eErr','Vul een geldig bedrag in.'); return; }
+    noErr('eErr');
+    extras.push({ date, type, desc: desc || type, amt });
+    extras.sort((a,b) => a.date.localeCompare(b.date));
+    localStorage.setItem(EK, JSON.stringify(extras));
+    document.getElementById('eAmt').value  = '';
+    document.getElementById('eDesc').value = '';
+    const d = new Date(date+'T00:00:00'); yr = d.getFullYear(); mo = d.getMonth();
+    render();
+  }
+
+  function delExtra(i) { extras.splice(i,1); localStorage.setItem(EK, JSON.stringify(extras)); render(); }
+
   function toMin(t) { const [h,m] = t.split(':').map(Number); return h*60+m; }
   function fmtH(m) { return `${Math.floor(m/60)}u ${m%60}m`; }
   function fmtE(n) { return '€ ' + n.toFixed(2).replace('.',','); }
@@ -426,6 +504,13 @@
     const totMin = ms.reduce((a,s)=>a+s.paid, 0);
     const gross  = (totMin/60)*rate;
 
+    // extras for this month
+    const es = extras.map((e,i)=>({...e,i})).filter(e=>{
+      const d = new Date(e.date+'T00:00:00');
+      return d.getFullYear()===yr && d.getMonth()===mo;
+    });
+    const extSum = es.reduce((a,e)=>a+e.amt, 0);
+
     document.getElementById('d-uren').textContent  = fmtH(totMin);
     document.getElementById('d-gross').textContent = fmtE(gross);
 
@@ -443,6 +528,30 @@
           <td class="c-purple">${fmtH(s.paid)}</td>
           <td class="c-green">${fmtE((s.paid/60)*rate)}</td>
           <td><button class="btn-del" onclick="delShift(${s.i})">✕</button></td>
+        </tr>`).join('')}
+        </tbody></table>`;
+    }
+
+    // ── Extra's tab ──
+    document.getElementById('e-total').textContent = fmtE(extSum);
+    const byType = {};
+    es.forEach(e => { byType[e.type] = (byType[e.type]||0) + e.amt; });
+    const parts = Object.entries(byType).map(([t,v])=>`${t}: ${fmtE(v)}`);
+    document.getElementById('e-sub').textContent = parts.length ? parts.join(' · ') : 'geen extra\'s ingevoerd';
+
+    if (!es.length) {
+      document.getElementById('extraTbl').innerHTML = '<div class="empty">Nog geen extra\'s deze maand</div>';
+    } else {
+      document.getElementById('extraTbl').innerHTML = `
+        <table><thead><tr>
+          <th>Datum</th><th>Type</th><th>Omschrijving</th><th>Bedrag</th><th></th>
+        </tr></thead><tbody>
+        ${es.map(e=>`<tr>
+          <td>${fmtD(e.date)}</td>
+          <td><span class="badge badge-${e.type}">${e.type}</span></td>
+          <td style="color:#94a3b8">${e.desc}</td>
+          <td class="c-amber">${fmtE(e.amt)}</td>
+          <td><button class="btn-del" onclick="delExtra(${e.i})">✕</button></td>
         </tr>`).join('')}
         </tbody></table>`;
     }
