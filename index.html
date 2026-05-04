@@ -1,707 +1,999 @@
 <!DOCTYPE html>
-<html lang="nl">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Loon Calculator</title>
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#7c3aed" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Loon Calc" />
-  <link rel="apple-touch-icon" href="icon.png" />
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Vault — Personal Organizer</title>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#7c3aed" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Vault" />
+<link rel="apple-touch-icon" href="icon.png" />
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#07090f;--surface:#0f1220;--surface2:#161b30;--border:#1e2540;
+    --purple:#8b5cf6;--blue:#3b82f6;--green:#10b981;--amber:#f59e0b;--red:#ef4444;
+    --text:#e2e8f0;--muted:#64748b;
+  }
+  html,body{height:100%}
+  body{
+    font-family:-apple-system,'Segoe UI',system-ui,sans-serif;
+    background:var(--bg);color:var(--text);
+    min-height:100vh;
+    padding-top:max(env(safe-area-inset-top),16px);
+    padding-bottom:calc(max(env(safe-area-inset-bottom),12px) + 72px);
+  }
+  .header{padding:14px 20px 8px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .header h1{font-size:1.5rem;font-weight:800;letter-spacing:-0.5px;
+    background:linear-gradient(120deg,#a78bfa 0%,#60a5fa 100%);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .header p{font-size:0.72rem;color:var(--muted);margin-top:2px}
+  .header-btn{
+    border:1px solid var(--border);background:var(--surface2);color:var(--text);
+    border-radius:10px;padding:8px 12px;font-size:0.78rem;font-weight:600;cursor:pointer
+  }
+  .header-btn:active{opacity:0.7}
 
-    :root {
-      --bg:      #07090f;
-      --surface: #0f1220;
-      --surface2:#161b30;
-      --border:  #1e2540;
-      --purple:  #8b5cf6;
-      --blue:    #3b82f6;
-      --green:   #10b981;
-      --amber:   #f59e0b;
-      --red:     #ef4444;
-      --text:    #e2e8f0;
-      --muted:   #64748b;
-    }
+  /* Panels */
+  .panel{display:none;padding:0 16px 20px}
+  .panel.on{display:block}
 
-    body {
-      font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      padding-top: max(env(safe-area-inset-top), 16px);
-      padding-bottom: max(env(safe-area-inset-bottom), 24px);
-    }
+  /* Card */
+  .card{
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:16px;padding:16px;margin-bottom:12px;position:relative;overflow:hidden
+  }
+  .card::after{content:'';position:absolute;inset:0 0 auto 0;height:1px;
+    background:linear-gradient(90deg,transparent,rgba(139,92,246,0.5),transparent)}
+  .card-title{
+    font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;
+    color:var(--muted);margin-bottom:12px;display:flex;justify-content:space-between;align-items:center
+  }
 
-    /* ── Header ── */
-    .header { padding: 20px 20px 0; margin-bottom: 20px; }
-    .header h1 {
-      font-size: 1.8rem;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-      background: linear-gradient(120deg, #a78bfa 0%, #60a5fa 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .header p { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .span2{grid-column:1/-1}
+  .field{display:flex;flex-direction:column;gap:5px}
+  label{font-size:0.72rem;font-weight:600;color:var(--muted)}
 
-    /* ── Settings bar ── */
-    .settings-bar {
-      display: flex;
-      gap: 10px;
-      padding: 0 20px;
-      margin-bottom: 16px;
-    }
-    .settings-bar .field { flex: 1; }
+  input,select,textarea{
+    background:var(--bg);border:1px solid var(--border);border-radius:10px;
+    color:var(--text);padding:10px 12px;font-size:0.9rem;width:100%;outline:none;
+    -webkit-appearance:none;font-family:inherit;transition:border-color .15s,box-shadow .15s
+  }
+  textarea{resize:vertical;min-height:80px}
+  input:focus,select:focus,textarea:focus{border-color:var(--purple);
+    box-shadow:0 0 0 3px rgba(139,92,246,0.18)}
 
-    /* ── Month nav ── */
-    .month-nav {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 14px;
-      margin-bottom: 16px;
-    }
-    .month-nav button {
-      width: 34px; height: 34px;
-      border-radius: 50%;
-      border: 1px solid var(--border);
-      background: var(--surface2);
-      color: var(--text);
-      font-size: 1rem;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .month-nav button:active { opacity: 0.6; }
-    .month-nav span {
-      font-size: 0.95rem;
-      font-weight: 700;
-      min-width: 150px;
-      text-align: center;
-    }
+  .btn{
+    width:100%;padding:11px;border:none;border-radius:12px;
+    background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;
+    font-size:0.88rem;font-weight:700;cursor:pointer;
+    box-shadow:0 4px 14px rgba(124,58,237,0.4);letter-spacing:0.02em
+  }
+  .btn:active{opacity:0.8}
+  .btn-ghost{
+    background:transparent;border:1px solid var(--border);box-shadow:none;color:var(--text)
+  }
+  .btn-danger{background:linear-gradient(135deg,#dc2626,#b91c1c);box-shadow:0 4px 14px rgba(220,38,38,.35)}
+  .btn-row{display:flex;gap:8px}
+  .btn-row .btn{flex:1}
 
-    /* ── Tabs ── */
-    .tabs {
-      display: flex;
-      gap: 4px;
-      margin: 0 20px 20px;
-      padding: 4px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-    }
-    .tab {
-      flex: 1;
-      padding: 8px 4px;
-      border: none;
-      border-radius: 10px;
-      background: transparent;
-      color: var(--muted);
-      font-size: 0.75rem;
-      font-weight: 700;
-      cursor: pointer;
-      letter-spacing: 0.02em;
-      transition: all 0.18s;
-    }
-    .tab.on {
-      background: linear-gradient(135deg, #7c3aed, #2563eb);
-      color: #fff;
-      box-shadow: 0 2px 12px rgba(124,58,237,0.45);
-    }
+  .btn-icon{
+    border:1px solid rgba(239,68,68,.25);background:rgba(239,68,68,.1);color:var(--red);
+    border-radius:8px;padding:5px 9px;font-size:0.72rem;font-weight:700;cursor:pointer
+  }
+  .btn-icon.edit{border-color:rgba(59,130,246,.3);background:rgba(59,130,246,.1);color:#60a5fa}
+  .btn-icon.toggle{border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.1);color:#34d399}
 
-    /* ── Panels ── */
-    .panel { display: none; padding: 0 20px; }
-    .panel.on { display: block; }
+  .empty{text-align:center;padding:28px 12px;color:#475569;font-size:0.85rem}
 
-    /* ── Card ── */
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 18px;
-      margin-bottom: 12px;
-      position: relative;
-      overflow: hidden;
-    }
-    .card::after {
-      content: '';
-      position: absolute;
-      inset: 0 0 auto 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(139,92,246,0.5), transparent);
-    }
-    .card-title {
-      font-size: 0.7rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--muted);
-      margin-bottom: 14px;
-    }
+  /* Item list */
+  .item{
+    display:flex;align-items:flex-start;gap:10px;padding:12px;
+    background:var(--surface2);border:1px solid var(--border);border-radius:12px;margin-bottom:8px
+  }
+  .item-body{flex:1;min-width:0}
+  .item-title{font-size:0.92rem;font-weight:700;color:#fff;margin-bottom:2px;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .item-sub{font-size:0.74rem;color:var(--muted)}
+  .item-actions{display:flex;flex-direction:column;gap:4px}
+  .item-actions-row{display:flex;gap:4px}
+  .item.done .item-title{color:var(--muted);text-decoration:line-through}
 
-    /* ── Form ── */
-    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .span2 { grid-column: 1 / -1; }
-    .field { display: flex; flex-direction: column; gap: 5px; }
-    label { font-size: 0.72rem; font-weight: 600; color: var(--muted); }
+  a.link{color:#60a5fa;text-decoration:none;word-break:break-all}
+  a.link:hover{text-decoration:underline}
 
-    input, select {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      color: var(--text);
-      padding: 10px 12px;
-      font-size: 0.9rem;
-      width: 100%;
-      outline: none;
-      -webkit-appearance: none;
-      transition: border-color 0.15s, box-shadow 0.15s;
-    }
-    input:focus, select:focus {
-      border-color: var(--purple);
-      box-shadow: 0 0 0 3px rgba(139,92,246,0.18);
-    }
+  .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:0.66rem;font-weight:700}
+  .badge-locked{background:rgba(245,158,11,.18);color:#fbbf24}
+  .badge-due{background:rgba(239,68,68,.18);color:#fca5a5}
+  .badge-ok{background:rgba(16,185,129,.18);color:#6ee7b7}
 
-    /* ── Buttons ── */
-    .btn-add {
-      width: 100%;
-      padding: 12px;
-      border: none;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #7c3aed, #2563eb);
-      color: #fff;
-      font-size: 0.9rem;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 4px 14px rgba(124,58,237,0.4);
-      letter-spacing: 0.02em;
-    }
-    .btn-add:active { opacity: 0.8; }
+  /* Bottom tab bar */
+  .tabbar{
+    position:fixed;left:0;right:0;bottom:0;
+    padding-bottom:env(safe-area-inset-bottom);
+    background:rgba(15,18,32,0.92);backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    border-top:1px solid var(--border);
+    display:grid;grid-template-columns:repeat(6,1fr);z-index:30
+  }
+  .tab{
+    background:transparent;border:none;color:var(--muted);
+    padding:10px 4px 8px;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+    font-size:0.62rem;font-weight:600;letter-spacing:0.02em
+  }
+  .tab .ic{font-size:1.05rem;line-height:1}
+  .tab.on{color:#a78bfa}
+  .tab.on .ic{filter:drop-shadow(0 0 6px rgba(167,139,250,.6))}
 
-    .btn-del {
-      border: 1px solid rgba(239,68,68,0.25);
-      background: rgba(239,68,68,0.1);
-      color: var(--red);
-      border-radius: 8px;
-      padding: 5px 10px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      cursor: pointer;
-    }
+  /* Modal */
+  .modal-bg{
+    position:fixed;inset:0;background:rgba(2,4,12,0.78);z-index:50;
+    display:none;align-items:center;justify-content:center;padding:20px;
+    backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)
+  }
+  .modal-bg.on{display:flex}
+  .modal{
+    background:var(--surface);border:1px solid var(--border);border-radius:18px;
+    width:100%;max-width:420px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,0.5)
+  }
+  .modal h2{font-size:1.1rem;font-weight:800;margin-bottom:6px;color:#fff}
+  .modal p{font-size:0.82rem;color:var(--muted);margin-bottom:16px}
+  .pin-display{
+    text-align:center;font-size:1.6rem;letter-spacing:0.5em;color:#fff;
+    font-weight:700;padding:12px;background:var(--bg);
+    border:1px solid var(--border);border-radius:12px;margin-bottom:14px;min-height:54px
+  }
+  .pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .pin-pad button{
+    padding:14px;font-size:1.1rem;font-weight:700;border-radius:12px;
+    background:var(--surface2);color:var(--text);border:1px solid var(--border);cursor:pointer
+  }
+  .pin-pad button:active{background:var(--purple);color:#fff}
 
-    .err { color: var(--red); font-size: 0.78rem; margin-top: 8px; display: none; }
+  .toast{
+    position:fixed;left:50%;transform:translateX(-50%);
+    bottom:calc(80px + env(safe-area-inset-bottom));
+    background:var(--surface2);border:1px solid var(--border);
+    color:var(--text);padding:10px 18px;border-radius:24px;
+    font-size:0.82rem;z-index:100;opacity:0;transition:opacity .25s;pointer-events:none;
+    box-shadow:0 8px 24px rgba(0,0,0,.4)
+  }
+  .toast.on{opacity:1}
 
-    /* ── Stat cards ── */
-    .stats2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .stats2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+  .stat{border-radius:14px;padding:14px}
+  .stat.purple{background:linear-gradient(135deg,rgba(124,58,237,.22),rgba(124,58,237,.05));
+    border:1px solid rgba(124,58,237,.3)}
+  .stat.amber{background:linear-gradient(135deg,rgba(245,158,11,.22),rgba(245,158,11,.05));
+    border:1px solid rgba(245,158,11,.3)}
+  .stat-lbl{font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;
+    margin-bottom:4px;color:#c4b5fd}
+  .stat.amber .stat-lbl{color:#fcd34d}
+  .stat-val{font-size:1.3rem;font-weight:800;color:#fff;letter-spacing:-0.5px}
 
-    .stat {
-      border-radius: 14px;
-      padding: 16px;
-    }
-    .stat.purple { background: linear-gradient(135deg,rgba(124,58,237,.22),rgba(124,58,237,.05)); border: 1px solid rgba(124,58,237,.3); }
-    .stat.blue   { background: linear-gradient(135deg,rgba(37,99,235,.22),rgba(37,99,235,.05));  border: 1px solid rgba(37,99,235,.3); }
-    .stat.green  { background: linear-gradient(135deg,rgba(16,185,129,.22),rgba(16,185,129,.05));border: 1px solid rgba(16,185,129,.3); }
-    .stat.amber  { background: linear-gradient(135deg,rgba(245,158,11,.22),rgba(245,158,11,.05));border: 1px solid rgba(245,158,11,.3); }
+  .doc-thumb{
+    width:42px;height:42px;border-radius:8px;background:var(--bg);
+    border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
+    font-size:1.3rem;flex-shrink:0
+  }
+  .doc-thumb img{width:100%;height:100%;object-fit:cover;border-radius:7px}
 
-    .stat-lbl {
-      font-size: 0.65rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: 6px;
-    }
-    .stat.purple .stat-lbl { color: #c4b5fd; }
-    .stat.blue   .stat-lbl { color: #93c5fd; }
-    .stat.green  .stat-lbl { color: #6ee7b7; }
-    .stat.amber  .stat-lbl { color: #fcd34d; }
+  .info-block{
+    background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25);
+    border-radius:12px;padding:12px;font-size:0.82rem;color:#cbd5e1;line-height:1.5
+  }
+  .info-block strong{color:#fff}
+  .info-block code{
+    background:rgba(0,0,0,.3);padding:1px 6px;border-radius:4px;
+    font-size:0.78rem;color:#a78bfa
+  }
+  .ext-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .ext-row a{
+    flex:1;min-width:120px;text-align:center;background:var(--surface2);
+    border:1px solid var(--border);border-radius:10px;padding:10px;
+    color:var(--text);text-decoration:none;font-size:0.82rem;font-weight:600
+  }
+  .ext-row a:active{opacity:0.7}
 
-    .stat-val {
-      font-size: 1.4rem;
-      font-weight: 800;
-      color: #fff;
-      letter-spacing: -0.5px;
-    }
-    .stat-sub { font-size: 0.68rem; color: var(--muted); margin-top: 3px; }
+  details{background:var(--surface2);border:1px solid var(--border);
+    border-radius:12px;padding:10px 14px;margin-bottom:8px}
+  details summary{cursor:pointer;font-weight:600;font-size:0.86rem}
+  details[open] summary{margin-bottom:8px;color:#a78bfa}
+  details p,details ul{font-size:0.8rem;color:#cbd5e1;line-height:1.6}
+  details ul{padding-left:18px;margin-top:4px}
 
-    /* ── Table ── */
-    .tbl-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-    th {
-      text-align: left;
-      padding: 7px 8px;
-      font-size: 0.67rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--muted);
-      border-bottom: 1px solid var(--border);
-      white-space: nowrap;
-    }
-    td {
-      padding: 10px 8px;
-      border-bottom: 1px solid rgba(30,37,64,.5);
-      color: #cbd5e1;
-      vertical-align: middle;
-    }
-    tr:last-child td { border-bottom: none; }
-    .c-purple { color: #a78bfa; font-weight: 700; }
-    .c-green  { color: #34d399; font-weight: 700; }
-    .c-amber  { color: #fbbf24; font-weight: 700; }
-
-    .empty { text-align: center; padding: 32px; color: var(--border); font-size: 0.85rem; }
-
-    /* ── Badges ── */
-    .badge {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 20px;
-      font-size: 0.7rem;
-      font-weight: 700;
-    }
-    .badge-fooi  { background: rgba(245,158,11,.18);  color: #fbbf24; }
-    .badge-bonus { background: rgba(16,185,129,.18);  color: #34d399; }
-    .badge-other { background: rgba(59,130,246,.18);  color: #60a5fa; }
-
-    /* ── Extra stat full-width ── */
-    .stat.full { grid-column: 1 / -1; }
-
-    /* ── Breakdown rows ── */
-    .brow {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 0;
-      border-bottom: 1px solid var(--border);
-      font-size: 0.88rem;
-    }
-    .brow:last-child { border-bottom: none; }
-    .brow-lbl { color: #94a3b8; }
-    .brow-val { font-weight: 700; color: #fff; }
-
-    /* ── Month grid ── */
-    .mg-item {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px 8px;
-      text-align: center;
-    }
-    .mg-name { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; letter-spacing: 0.05em; }
-    .mg-val  { font-size: 0.88rem; font-weight: 700; color: #fbbf24; }
-    .mg-item.cur { border-color: rgba(245,158,11,.4); background: rgba(245,158,11,.06); }
-    .mg-item.empty .mg-val { color: var(--border); }
-  </style>
+  .check{
+    width:22px;height:22px;border-radius:6px;border:2px solid var(--border);
+    background:var(--bg);cursor:pointer;flex-shrink:0;margin-top:2px;
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.85rem
+  }
+  .check.on{background:var(--green);border-color:var(--green)}
+</style>
 </head>
 <body>
 
 <div class="header">
-  <h1>Loon Calc</h1>
-  <p>Jouw persoonlijke loonberekening</p>
-</div>
-
-<div class="settings-bar">
-  <div class="field">
-    <label>Uurloon (€)</label>
-    <input type="number" id="rate" value="16.50" step="0.01" min="0" />
+  <div>
+    <h1>Vault</h1>
+    <p id="subtitle">Notes, lists, reminders &amp; more</p>
   </div>
-  <div class="field">
-    <label>Vakantiegeld (%)</label>
-    <input type="number" id="vacpct" value="8" step="0.1" min="0" />
-  </div>
+  <button class="header-btn" id="lockBtn" onclick="lockVault()" style="display:none">🔒 Lock</button>
 </div>
 
-<div class="month-nav">
-  <button onclick="prevMonth()">&#8592;</button>
-  <span id="monthLabel"></span>
-  <button onclick="nextMonth()">&#8594;</button>
-</div>
-
-<div class="tabs">
-  <button class="tab on"  onclick="go('diensten',this)">Diensten</button>
-  <button class="tab"     onclick="go('extras',this)">Extra's</button>
-  <button class="tab"     onclick="go('vakantie',this)">Vakantiegeld</button>
-  <button class="tab"     onclick="go('totaal',this)">Totaal</button>
-</div>
-
-<!-- ── TAB 1: Diensten ── -->
-<div class="panel on" id="p-diensten">
-
+<!-- ── Notes ── -->
+<div class="panel on" id="p-notes">
   <div class="card">
-    <div class="card-title">Dienst toevoegen</div>
+    <div class="card-title">New note</div>
     <div class="grid2">
-      <div class="field">
-        <label>Datum</label>
-        <input type="date" id="sDate" />
+      <div class="span2 field">
+        <label>Title</label>
+        <input type="text" id="nTitle" placeholder="Title" />
       </div>
-      <div class="field">
-        <label>Pauze (min)</label>
-        <input type="number" id="sBreak" value="30" min="0" step="5" />
+      <div class="span2 field">
+        <label>Content</label>
+        <textarea id="nBody" placeholder="Write your note…"></textarea>
       </div>
-      <div class="field">
-        <label>Begintijd</label>
-        <input type="time" id="sStart" />
-      </div>
-      <div class="field">
-        <label>Eindtijd</label>
-        <input type="time" id="sEnd" />
-      </div>
-      <div class="span2">
-        <button class="btn-add" onclick="addShift()">+ Dienst toevoegen</button>
-      </div>
-    </div>
-    <div class="err" id="sErr"></div>
-  </div>
-
-  <div class="stats2">
-    <div class="stat purple">
-      <div class="stat-lbl">Uren gewerkt</div>
-      <div class="stat-val" id="d-uren">0u 0m</div>
-      <div class="stat-sub">deze maand</div>
-    </div>
-    <div class="stat blue">
-      <div class="stat-lbl">Bruto loon</div>
-      <div class="stat-val" id="d-gross">€ 0</div>
-      <div class="stat-sub">excl. vakantiegeld</div>
+      <label class="span2" style="display:flex;align-items:center;gap:8px;font-size:0.82rem;color:#cbd5e1">
+        <input type="checkbox" id="nLock" style="width:auto" /> Save in Private Vault
+      </label>
+      <button class="btn span2" onclick="addNote()">+ Save note</button>
     </div>
   </div>
-
   <div class="card">
-    <div class="card-title">Diensten deze maand</div>
-    <div class="tbl-wrap" id="shiftTbl"><div class="empty">Nog geen diensten</div></div>
+    <div class="card-title">Your notes <span id="nCount" style="color:var(--muted);font-weight:400"></span></div>
+    <div id="notesList"><div class="empty">No notes yet</div></div>
   </div>
 </div>
 
-<!-- ── TAB 2: Extra's ── -->
-<div class="panel" id="p-extras">
-
+<!-- ── Shopping ── -->
+<div class="panel" id="p-shop">
   <div class="card">
-    <div class="card-title">Extra invoeren</div>
+    <div class="card-title">Add item</div>
     <div class="grid2">
-      <div class="field">
-        <label>Datum</label>
-        <input type="date" id="eDate" />
+      <div class="field" style="grid-column:1/-1">
+        <label>Item</label>
+        <input type="text" id="shName" placeholder="e.g. Bread" />
       </div>
       <div class="field">
-        <label>Type</label>
-        <select id="eType">
-          <option value="fooi">Fooi</option>
-          <option value="bonus">Bonus</option>
-          <option value="other">Anders</option>
-        </select>
+        <label>Quantity</label>
+        <input type="text" id="shQty" placeholder="1" />
       </div>
-      <div class="field">
-        <label>Omschrijving</label>
-        <input type="text" id="eDesc" placeholder="bijv. weekenddienst" />
-      </div>
-      <div class="field">
-        <label>Bedrag (€)</label>
-        <input type="number" id="eAmt" min="0" step="0.01" placeholder="0,00" />
-      </div>
-      <div class="span2">
-        <button class="btn-add" onclick="addExtra()">+ Extra toevoegen</button>
+      <div class="field" style="display:flex;align-items:flex-end">
+        <button class="btn" onclick="addShop()" style="height:42px">+ Add</button>
       </div>
     </div>
-    <div class="err" id="eErr"></div>
   </div>
-
   <div class="stats2">
-    <div class="stat amber full">
-      <div class="stat-lbl">Totaal extra's deze maand</div>
-      <div class="stat-val" id="e-total">€ 0,00</div>
-      <div class="stat-sub" id="e-sub">geen extra's ingevoerd</div>
-    </div>
+    <div class="stat purple"><div class="stat-lbl">To buy</div><div class="stat-val" id="shTodo">0</div></div>
+    <div class="stat amber"><div class="stat-lbl">Done</div><div class="stat-val" id="shDone">0</div></div>
   </div>
-
   <div class="card">
-    <div class="card-title">Extra's deze maand</div>
-    <div class="tbl-wrap" id="extraTbl"><div class="empty">Nog geen extra's</div></div>
+    <div class="card-title">Shopping list
+      <button class="btn-icon" onclick="clearShopDone()">Clear done</button>
+    </div>
+    <div id="shopList"><div class="empty">List is empty</div></div>
   </div>
 </div>
 
-<!-- ── TAB 3: Vakantiegeld ── -->
-<div class="panel" id="p-vakantie">
-
-  <div class="card" style="text-align:center; padding: 28px 20px;">
-    <div class="stat-lbl" style="color:#fcd34d; margin-bottom:10px;">Totaal gespaard dit jaar</div>
-    <div id="vac-year" style="font-size:2.8rem;font-weight:900;letter-spacing:-1px;background:linear-gradient(120deg,#fbbf24,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">€ 0,00</div>
-    <div style="font-size:0.78rem;color:var(--muted);margin-top:6px;" id="vac-year-sub"></div>
-  </div>
-
+<!-- ── Wishlist ── -->
+<div class="panel" id="p-wish">
   <div class="card">
-    <div class="card-title">Deze maand</div>
-    <div style="display:flex;flex-direction:column;gap:0;" id="vac-month-breakdown"></div>
+    <div class="card-title">Add wish</div>
+    <div class="grid2">
+      <div class="field span2">
+        <label>What do you want?</label>
+        <input type="text" id="wTitle" placeholder="e.g. Sony WH-1000XM5" />
+      </div>
+      <div class="field span2">
+        <label>Link (URL)</label>
+        <input type="url" id="wUrl" placeholder="https://…" />
+      </div>
+      <div class="field">
+        <label>Price (€)</label>
+        <input type="number" id="wPrice" step="0.01" min="0" placeholder="0,00" />
+      </div>
+      <div class="field">
+        <label>Note</label>
+        <input type="text" id="wNote" placeholder="optional" />
+      </div>
+      <button class="btn span2" onclick="addWish()">+ Add to wishlist</button>
+    </div>
   </div>
-
   <div class="card">
-    <div class="card-title">Per maand <span id="vac-year-num" style="color:var(--muted);font-weight:400;"></span></div>
-    <div id="vac-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;"></div>
+    <div class="card-title">Wishlist <span id="wTotal" style="color:var(--muted);font-weight:400"></span></div>
+    <div id="wishList"><div class="empty">Nothing on the wishlist yet</div></div>
   </div>
-
 </div>
 
-<!-- ── TAB 4: Totaal ── -->
-<div class="panel" id="p-totaal">
+<!-- ── Reminders ── -->
+<div class="panel" id="p-rem">
+  <div class="card">
+    <div class="card-title">New reminder</div>
+    <div class="grid2">
+      <div class="field span2">
+        <label>What?</label>
+        <input type="text" id="rTitle" placeholder="e.g. Pay rent" />
+      </div>
+      <div class="field">
+        <label>Date</label>
+        <input type="date" id="rDate" />
+      </div>
+      <div class="field">
+        <label>Time</label>
+        <input type="time" id="rTime" />
+      </div>
+      <div class="field span2">
+        <label>Notes (optional)</label>
+        <input type="text" id="rNote" />
+      </div>
+      <label class="span2" style="display:flex;align-items:center;gap:8px;font-size:0.82rem;color:#cbd5e1">
+        <input type="checkbox" id="rLock" style="width:auto" /> Save in Private Vault
+      </label>
+      <div class="btn-row span2">
+        <button class="btn" onclick="addReminder()">+ Save &amp; notify</button>
+        <button class="btn btn-ghost" onclick="exportLastIcs()" title="Download .ics file">📅 .ics</button>
+      </div>
+    </div>
+    <p id="permNote" style="font-size:0.75rem;color:var(--muted);margin-top:10px;line-height:1.5"></p>
+  </div>
+  <div class="card">
+    <div class="card-title">Upcoming
+      <button class="btn-icon edit" onclick="exportAllIcs()">Export all to calendar</button>
+    </div>
+    <div id="remList"><div class="empty">No reminders yet</div></div>
+  </div>
+</div>
 
-  <div class="card" style="text-align:center;padding:28px 20px;margin-bottom:12px;">
-    <div class="stat-lbl" style="color:#6ee7b7;margin-bottom:10px;">Totaal te ontvangen</div>
-    <div id="t-grand" style="font-size:3rem;font-weight:900;letter-spacing:-1.5px;background:linear-gradient(120deg,#34d399,#10b981);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;">€ 0,00</div>
-    <div id="t-period" style="font-size:0.78rem;color:var(--muted);margin-top:8px;"></div>
+<!-- ── Vault (private) ── -->
+<div class="panel" id="p-vault">
+  <div id="vaultLocked">
+    <div class="card" style="text-align:center;padding:32px 20px">
+      <div style="font-size:3rem;margin-bottom:10px">🔐</div>
+      <h2 style="font-size:1.15rem;font-weight:800;margin-bottom:6px;color:#fff">Private Vault is locked</h2>
+      <p style="font-size:0.84rem;color:var(--muted);margin-bottom:20px;line-height:1.5">
+        Locked notes, private documents and confidential reminders.<br>
+        Unlock with biometrics or your PIN.
+      </p>
+      <div class="btn-row">
+        <button class="btn" id="bioBtn" onclick="bioUnlock()">👆 Biometrics</button>
+        <button class="btn btn-ghost" onclick="askPin('unlock')">🔢 PIN</button>
+      </div>
+      <p id="vaultStatus" style="font-size:0.78rem;color:var(--muted);margin-top:14px"></p>
+    </div>
+    <div class="card">
+      <div class="card-title">First time?</div>
+      <p style="font-size:0.84rem;color:#cbd5e1;line-height:1.55;margin-bottom:12px">
+        Set up a PIN first. You can also enroll biometrics (Face ID, Touch ID,
+        Windows Hello, fingerprint) afterwards.
+      </p>
+      <button class="btn" onclick="askPin('setup')">Set up PIN</button>
+    </div>
+  </div>
+
+  <div id="vaultUnlocked" style="display:none">
+    <div class="info-block" style="margin-bottom:12px">
+      🔓 <strong>Vault unlocked.</strong> Auto-locks when you leave or close the app.
+    </div>
+
+    <div class="card">
+      <div class="card-title">Add document
+        <button class="btn-icon edit" onclick="document.getElementById('docFile').click()">+ File</button>
+      </div>
+      <input type="file" id="docFile" style="display:none" onchange="addDoc(event)" multiple
+        accept="image/*,application/pdf,.doc,.docx,.txt" />
+      <p style="font-size:0.78rem;color:var(--muted);line-height:1.5">
+        Pictures, PDFs, scans of ID, insurance, contracts… stored locally in your browser, encrypted at rest by your vault PIN.
+      </p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Documents <span id="dCount" style="color:var(--muted);font-weight:400"></span></div>
+      <div id="docList"><div class="empty">No documents yet</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Locked notes</div>
+      <div id="lockedNotes"><div class="empty">No locked notes</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Locked reminders</div>
+      <div id="lockedRems"><div class="empty">No locked reminders</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Vault settings</div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="askPin('change')">Change PIN</button>
+        <button class="btn btn-ghost" onclick="enrollBio()">Enroll biometrics</button>
+      </div>
+      <button class="btn btn-danger" style="margin-top:10px" onclick="resetVault()">Reset vault (delete all)</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── More ── -->
+<div class="panel" id="p-more">
+  <div class="card">
+    <div class="card-title">Mail &amp; calendar integration</div>
+    <p style="font-size:0.84rem;color:#cbd5e1;line-height:1.55;margin-bottom:10px">
+      Read mail directly inside the app and auto-add appointments to your agenda
+      requires a connected backend with Google / Microsoft OAuth — not yet active.
+      For now, you can:
+    </p>
+    <div class="ext-row">
+      <a href="https://mail.google.com" target="_blank" rel="noopener">📧 Open Gmail</a>
+      <a href="https://outlook.live.com/mail" target="_blank" rel="noopener">📧 Open Outlook</a>
+    </div>
+    <div class="ext-row">
+      <a href="https://calendar.google.com" target="_blank" rel="noopener">📅 Google Calendar</a>
+      <a href="https://outlook.live.com/calendar" target="_blank" rel="noopener">📅 Outlook Calendar</a>
+    </div>
+    <p style="font-size:0.78rem;color:var(--muted);line-height:1.5;margin-top:12px">
+      Reminders you create in this app can be exported as <code>.ics</code> files
+      that any calendar (Google, Apple, Outlook) automatically imports.
+    </p>
   </div>
 
   <div class="card">
-    <div class="card-title">Uitsplitsing</div>
-    <div class="brow">
-      <span class="brow-lbl">Bruto uurloon</span>
-      <span class="brow-val" id="t-gross">€ 0,00</span>
-    </div>
-    <div class="brow">
-      <span class="brow-lbl" id="t-vac-lbl">Vakantiegeld (8%)</span>
-      <span class="brow-val" style="color:#fbbf24;" id="t-vac">€ 0,00</span>
-    </div>
-    <div class="brow">
-      <span class="brow-lbl">Extra's (fooi / bonus)</span>
-      <span class="brow-val" style="color:#60a5fa;" id="t-ext">€ 0,00</span>
-    </div>
-    <div class="brow" style="padding-top:16px;margin-top:4px;">
-      <span style="font-size:1rem;font-weight:700;color:var(--text);">Totaal</span>
-      <span style="font-size:1.3rem;font-weight:800;color:#34d399;" id="t-total">€ 0,00</span>
-    </div>
+    <div class="card-title">Install on your device</div>
+    <details open>
+      <summary>📱 iPhone / iPad</summary>
+      <ol style="padding-left:18px;font-size:0.82rem;color:#cbd5e1;line-height:1.7">
+        <li>Open this page in Safari</li>
+        <li>Tap the <strong>Share</strong> icon</li>
+        <li>Tap <strong>Add to Home Screen</strong></li>
+      </ol>
+    </details>
+    <details>
+      <summary>🤖 Android</summary>
+      <ol style="padding-left:18px;font-size:0.82rem;color:#cbd5e1;line-height:1.7">
+        <li>Open this page in Chrome</li>
+        <li>Tap <strong>Install app</strong> in the menu (or the prompt)</li>
+      </ol>
+    </details>
+    <details>
+      <summary>🪟 Windows / 🍎 macOS / 🐧 Linux (desktop)</summary>
+      <ol style="padding-left:18px;font-size:0.82rem;color:#cbd5e1;line-height:1.7">
+        <li>Open in Chrome, Edge, or Brave</li>
+        <li>Click the <strong>install</strong> icon in the address bar</li>
+        <li>The app gets its own window and a desktop / Start menu / Launcher entry</li>
+      </ol>
+    </details>
   </div>
 
-  <div class="stats2">
-    <div class="stat purple">
-      <div class="stat-lbl">Uren gewerkt</div>
-      <div class="stat-val" id="t-uren">0u 0m</div>
+  <div class="card">
+    <div class="card-title">Data &amp; privacy</div>
+    <p style="font-size:0.82rem;color:#cbd5e1;line-height:1.55">
+      All data stays on your device — nothing is uploaded.
+      The vault PIN is stored as a salted PBKDF2 hash. Biometrics use the
+      WebAuthn standard (Face ID, Touch ID, Windows Hello, fingerprint).
+    </p>
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn btn-ghost" onclick="exportData()">⬇️ Export backup</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('impFile').click()">⬆️ Import</button>
     </div>
-    <div class="stat blue">
-      <div class="stat-lbl">Diensten</div>
-      <div class="stat-val" id="t-diensten">0</div>
-    </div>
-    <div class="stat amber">
-      <div class="stat-lbl">Vakantiegeld</div>
-      <div class="stat-val" id="t-vacstat">€ 0,00</div>
-    </div>
-    <div class="stat green">
-      <div class="stat-lbl">Extra's</div>
-      <div class="stat-val" id="t-extstat">€ 0,00</div>
-    </div>
+    <input type="file" id="impFile" accept="application/json" style="display:none" onchange="importData(event)" />
   </div>
 
+  <div class="card">
+    <div class="card-title">About</div>
+    <p style="font-size:0.78rem;color:var(--muted);line-height:1.6">
+      Vault v1.0 · Personal organizer PWA<br>
+      Works offline · cross-platform via Add to Home Screen / Install
+    </p>
+  </div>
 </div>
+
+<!-- Tab bar -->
+<div class="tabbar">
+  <button class="tab on" data-p="notes" onclick="go('notes',this)">
+    <span class="ic">📝</span><span>Notes</span></button>
+  <button class="tab" data-p="shop" onclick="go('shop',this)">
+    <span class="ic">🛒</span><span>Shop</span></button>
+  <button class="tab" data-p="wish" onclick="go('wish',this)">
+    <span class="ic">⭐</span><span>Wishes</span></button>
+  <button class="tab" data-p="rem" onclick="go('rem',this)">
+    <span class="ic">⏰</span><span>Reminders</span></button>
+  <button class="tab" data-p="vault" onclick="go('vault',this)">
+    <span class="ic">🔒</span><span>Vault</span></button>
+  <button class="tab" data-p="more" onclick="go('more',this)">
+    <span class="ic">⋯</span><span>More</span></button>
+</div>
+
+<!-- PIN modal -->
+<div class="modal-bg" id="pinModal">
+  <div class="modal">
+    <h2 id="pinTitle">Enter PIN</h2>
+    <p id="pinSubtitle">4–8 digits</p>
+    <div class="pin-display" id="pinDisp"></div>
+    <div class="pin-pad">
+      <button onclick="pinKey('1')">1</button><button onclick="pinKey('2')">2</button><button onclick="pinKey('3')">3</button>
+      <button onclick="pinKey('4')">4</button><button onclick="pinKey('5')">5</button><button onclick="pinKey('6')">6</button>
+      <button onclick="pinKey('7')">7</button><button onclick="pinKey('8')">8</button><button onclick="pinKey('9')">9</button>
+      <button onclick="pinCancel()" style="color:var(--red)">✕</button>
+      <button onclick="pinKey('0')">0</button>
+      <button onclick="pinBack()">⌫</button>
+    </div>
+    <button class="btn" id="pinOk" onclick="pinSubmit()" style="margin-top:14px">OK</button>
+    <p id="pinErr" style="color:var(--red);font-size:0.8rem;margin-top:10px;text-align:center;display:none"></p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
 
 <script>
-  const SK = 'loon_shifts_v2';
-  const EK = 'loon_extras_v1';
-  let shifts = JSON.parse(localStorage.getItem(SK) || '[]');
-  let extras = JSON.parse(localStorage.getItem(EK) || '[]');
+/* ───────── Storage ───────── */
+const K_NOTES='vault_notes',K_SHOP='vault_shop',K_WISH='vault_wish',
+      K_DOCS='vault_docs',K_REMS='vault_rems',K_AUTH='vault_auth',
+      K_BIO='vault_bio_credid';
 
-  // migrate old data (old key used 'paidMin', new uses 'paid')
-  const old = localStorage.getItem('wage_shifts');
-  if (old && !shifts.length) {
-    shifts = JSON.parse(old).map(s => ({
-      ...s,
-      paid: s.paid ?? s.paidMin ?? 0
-    }));
-    localStorage.setItem(SK, JSON.stringify(shifts));
+const load=k=>JSON.parse(localStorage.getItem(k)||'[]');
+const save=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+let notes=load(K_NOTES),shop=load(K_SHOP),wish=load(K_WISH),
+    docs=load(K_DOCS),rems=load(K_REMS);
+let unlocked=false;
+let lastReminderId=null;
+
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const now=()=>Date.now();
+const $=id=>document.getElementById(id);
+
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('on');
+  clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('on'),2200)}
+
+function fmtDateTime(iso){
+  if(!iso)return '';
+  const d=new Date(iso);
+  return d.toLocaleString(undefined,{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})
+}
+function fmtDateOnly(iso){return new Date(iso).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})}
+
+/* ───────── Tabs ───────── */
+function go(id,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
+  $('p-'+id).classList.add('on');
+  if(btn)btn.classList.add('on');
+  else document.querySelector(`.tab[data-p="${id}"]`)?.classList.add('on');
+  if(id==='vault')renderVault();
+}
+
+/* ───────── Notes ───────── */
+function addNote(){
+  const title=$('nTitle').value.trim(),body=$('nBody').value.trim(),locked=$('nLock').checked;
+  if(!title&&!body){toast('Empty note');return}
+  if(locked&&!unlocked&&!hasAuth()){toast('Set up vault first');go('vault');return}
+  if(locked&&!unlocked){toast('Unlock vault first');go('vault');return}
+  notes.unshift({id:uid(),title:title||'(untitled)',body,locked,updated:now()});
+  save(K_NOTES,notes);
+  $('nTitle').value='';$('nBody').value='';$('nLock').checked=false;
+  renderNotes();renderVault();toast('Note saved')
+}
+function delNote(id){if(!confirm('Delete this note?'))return;
+  notes=notes.filter(n=>n.id!==id);save(K_NOTES,notes);renderNotes();renderVault()}
+function toggleNoteLock(id){
+  if(!unlocked&&!hasAuth()){toast('Set up vault first');go('vault');return}
+  if(!unlocked){toast('Unlock vault first');go('vault');return}
+  notes=notes.map(n=>n.id===id?{...n,locked:!n.locked}:n);
+  save(K_NOTES,notes);renderNotes();renderVault()}
+
+function renderNotes(){
+  const visible=notes.filter(n=>!n.locked);
+  $('nCount').textContent=visible.length?`(${visible.length})`:'';
+  $('notesList').innerHTML=visible.length?visible.map(n=>`
+    <div class="item">
+      <div class="item-body">
+        <div class="item-title">${esc(n.title)}</div>
+        <div class="item-sub" style="white-space:pre-wrap;color:#94a3b8;font-size:0.82rem;margin-top:4px">${esc(n.body).slice(0,160)}${n.body.length>160?'…':''}</div>
+        <div class="item-sub" style="margin-top:6px">${fmtDateTime(new Date(n.updated).toISOString())}</div>
+      </div>
+      <div class="item-actions">
+        <button class="btn-icon toggle" onclick="toggleNoteLock('${n.id}')" title="Move to vault">🔒</button>
+        <button class="btn-icon" onclick="delNote('${n.id}')">✕</button>
+      </div>
+    </div>`).join(''):'<div class="empty">No notes yet</div>'
+}
+
+/* ───────── Shopping ───────── */
+function addShop(){
+  const t=$('shName').value.trim(),q=$('shQty').value.trim()||'1';
+  if(!t){toast('Empty');return}
+  shop.push({id:uid(),text:t,qty:q,done:false});
+  save(K_SHOP,shop);$('shName').value='';$('shQty').value='';renderShop();toast('Added')
+}
+function toggleShop(id){shop=shop.map(s=>s.id===id?{...s,done:!s.done}:s);save(K_SHOP,shop);renderShop()}
+function delShop(id){shop=shop.filter(s=>s.id!==id);save(K_SHOP,shop);renderShop()}
+function clearShopDone(){shop=shop.filter(s=>!s.done);save(K_SHOP,shop);renderShop();toast('Cleared')}
+function renderShop(){
+  $('shTodo').textContent=shop.filter(s=>!s.done).length;
+  $('shDone').textContent=shop.filter(s=>s.done).length;
+  $('shopList').innerHTML=shop.length?shop.map(s=>`
+    <div class="item ${s.done?'done':''}">
+      <div class="check ${s.done?'on':''}" onclick="toggleShop('${s.id}')">${s.done?'✓':''}</div>
+      <div class="item-body">
+        <div class="item-title">${esc(s.text)}</div>
+        <div class="item-sub">Qty: ${esc(s.qty)}</div>
+      </div>
+      <div class="item-actions"><button class="btn-icon" onclick="delShop('${s.id}')">✕</button></div>
+    </div>`).join(''):'<div class="empty">List is empty</div>'
+}
+
+/* ───────── Wishlist ───────── */
+function addWish(){
+  const t=$('wTitle').value.trim();
+  if(!t){toast('Title required');return}
+  const u=$('wUrl').value.trim(),p=parseFloat($('wPrice').value)||0,n=$('wNote').value.trim();
+  wish.unshift({id:uid(),title:t,url:u,price:p,note:n});
+  save(K_WISH,wish);
+  ['wTitle','wUrl','wPrice','wNote'].forEach(i=>$(i).value='');
+  renderWish();toast('Added')
+}
+function delWish(id){wish=wish.filter(w=>w.id!==id);save(K_WISH,wish);renderWish()}
+function renderWish(){
+  const tot=wish.reduce((a,w)=>a+(w.price||0),0);
+  $('wTotal').textContent=wish.length?`(${wish.length}, total € ${tot.toFixed(2)})`:'';
+  $('wishList').innerHTML=wish.length?wish.map(w=>`
+    <div class="item">
+      <div class="item-body">
+        <div class="item-title">${esc(w.title)} ${w.price?`<span style="color:#fbbf24;font-size:0.78rem">€ ${w.price.toFixed(2)}</span>`:''}</div>
+        ${w.url?`<div class="item-sub"><a class="link" href="${esc(w.url)}" target="_blank" rel="noopener">${esc(w.url)}</a></div>`:''}
+        ${w.note?`<div class="item-sub" style="margin-top:3px">${esc(w.note)}</div>`:''}
+      </div>
+      <div class="item-actions"><button class="btn-icon" onclick="delWish('${w.id}')">✕</button></div>
+    </div>`).join(''):'<div class="empty">Nothing on the wishlist yet</div>'
+}
+
+/* ───────── Reminders ───────── */
+function addReminder(){
+  const t=$('rTitle').value.trim(),d=$('rDate').value,tm=$('rTime').value,
+        nt=$('rNote').value.trim(),lk=$('rLock').checked;
+  if(!t||!d||!tm){toast('Title, date & time required');return}
+  if(lk&&!unlocked&&!hasAuth()){toast('Set up vault first');go('vault');return}
+  if(lk&&!unlocked){toast('Unlock vault first');go('vault');return}
+  const when=new Date(`${d}T${tm}`).getTime();
+  if(when<now()){toast('That time is in the past');return}
+  const r={id:uid(),title:t,note:nt,when,locked:lk,notified:false};
+  rems.push(r);rems.sort((a,b)=>a.when-b.when);save(K_REMS,rems);
+  lastReminderId=r.id;
+  ['rTitle','rNote'].forEach(i=>$(i).value='');$('rLock').checked=false;
+  scheduleAll();renderRems();renderVault();
+  ensureNotifPerm();
+  toast('Reminder saved')
+}
+function delRem(id){rems=rems.filter(r=>r.id!==id);save(K_REMS,rems);renderRems();renderVault()}
+
+function renderRems(){
+  const visible=rems.filter(r=>!r.locked).sort((a,b)=>a.when-b.when);
+  $('remList').innerHTML=visible.length?visible.map(r=>{
+    const overdue=r.when<now();
+    return `<div class="item">
+      <div class="item-body">
+        <div class="item-title">${esc(r.title)}
+          ${overdue?'<span class="badge badge-due">past</span>':'<span class="badge badge-ok">scheduled</span>'}
+        </div>
+        <div class="item-sub">${fmtDateTime(new Date(r.when).toISOString())}</div>
+        ${r.note?`<div class="item-sub" style="margin-top:3px">${esc(r.note)}</div>`:''}
+      </div>
+      <div class="item-actions">
+        <div class="item-actions-row">
+          <button class="btn-icon edit" onclick="exportIcs('${r.id}')" title="Add to calendar">📅</button>
+          <button class="btn-icon" onclick="delRem('${r.id}')">✕</button>
+        </div>
+      </div>
+    </div>`}).join(''):'<div class="empty">No reminders yet</div>'
+}
+
+/* Notification scheduling (foreground only — best effort while app is open) */
+let _timers=[];
+function scheduleAll(){
+  _timers.forEach(t=>clearTimeout(t));_timers=[];
+  rems.forEach(r=>{
+    if(r.notified||r.when<now())return;
+    const ms=r.when-now();
+    if(ms>2147000000)return; // > ~24 days, skip (timer cap)
+    _timers.push(setTimeout(()=>fireNotif(r),ms))
+  })
+}
+function fireNotif(r){
+  r.notified=true;save(K_REMS,rems);
+  if('Notification' in window && Notification.permission==='granted'){
+    if(navigator.serviceWorker?.controller){
+      navigator.serviceWorker.ready.then(reg=>reg.showNotification('⏰ '+r.title,{
+        body:r.note||'Reminder',icon:'icon-192.png',badge:'icon-192.png',tag:r.id,
+        vibrate:[100,40,100]
+      }))
+    } else new Notification('⏰ '+r.title,{body:r.note||'Reminder',icon:'icon-192.png'})
+  } else { toast('⏰ '+r.title) }
+}
+async function ensureNotifPerm(){
+  if(!('Notification' in window)){updatePermNote();return}
+  if(Notification.permission==='default'){
+    try{await Notification.requestPermission()}catch(e){}
   }
-  // fix any entry that still has paidMin instead of paid
-  shifts = shifts.map(s => {
-    const paid = (typeof s.paid === 'number' && !isNaN(s.paid) && s.paid > 0)
-      ? s.paid
-      : (typeof s.paidMin === 'number' && !isNaN(s.paidMin) ? s.paidMin : 0);
-    return { ...s, paid };
+  updatePermNote()
+}
+function updatePermNote(){
+  const el=$('permNote');if(!el)return;
+  if(!('Notification' in window)){el.textContent='⚠️ This browser does not support notifications.';return}
+  if(Notification.permission==='granted'){
+    el.innerHTML='✅ Notifications on. Tip: install the app for reliable background alerts.'
+  } else if(Notification.permission==='denied'){
+    el.innerHTML='⚠️ Notifications blocked in your browser. Use the .ics export to add reminders to your system calendar instead.'
+  } else {
+    el.innerHTML='Reminders need notification permission. You\'ll be asked on first save.'
+  }
+}
+
+/* ICS export */
+function icsEscape(s){return (s||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n')}
+function icsDate(ms){const d=new Date(ms);
+  return d.getUTCFullYear()+pad(d.getUTCMonth()+1)+pad(d.getUTCDate())+'T'+
+    pad(d.getUTCHours())+pad(d.getUTCMinutes())+pad(d.getUTCSeconds())+'Z'}
+function pad(n){return String(n).padStart(2,'0')}
+function icsForReminders(list){
+  const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Vault PWA//EN','CALSCALE:GREGORIAN'];
+  list.forEach(r=>{
+    const start=r.when, end=r.when+30*60*1000;
+    lines.push('BEGIN:VEVENT',
+      'UID:'+r.id+'@vault-pwa',
+      'DTSTAMP:'+icsDate(now()),
+      'DTSTART:'+icsDate(start),
+      'DTEND:'+icsDate(end),
+      'SUMMARY:'+icsEscape(r.title),
+      'DESCRIPTION:'+icsEscape(r.note||''),
+      'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+icsEscape(r.title),
+      'TRIGGER:-PT0M','END:VALARM',
+      'END:VEVENT')
   });
-  localStorage.setItem(SK, JSON.stringify(shifts));
+  lines.push('END:VCALENDAR');
+  return lines.join('\r\n')
+}
+function downloadFile(content,name,mime){
+  const blob=new Blob([content],{type:mime||'application/octet-stream'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=name;
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000)
+}
+function downloadIcs(content,name){downloadFile(content,name,'text/calendar')}
+function exportIcs(id){const r=rems.find(x=>x.id===id);if(!r)return;
+  downloadIcs(icsForReminders([r]),(r.title.replace(/[^\w]+/g,'_')||'reminder')+'.ics');
+  toast('Open the file to add to your calendar')}
+function exportLastIcs(){if(!lastReminderId){toast('Save a reminder first');return}exportIcs(lastReminderId)}
+function exportAllIcs(){if(!rems.length){toast('No reminders');return}
+  downloadIcs(icsForReminders(rems),'vault_reminders.ics');toast('Open the file to import all')}
 
-  let yr, mo;
-  const MO = ['Januari','Februari','Maart','April','Mei','Juni','Juli','Augustus','September','Oktober','November','December'];
+/* ───────── Vault: PIN ───────── */
+function hasAuth(){return !!localStorage.getItem(K_AUTH)}
 
-  function init() {
-    const n = new Date();
-    yr = n.getFullYear(); mo = n.getMonth();
-    const today = n.toISOString().slice(0,10);
-    document.getElementById('sDate').value = today;
-    document.getElementById('eDate').value = today;
-    render();
+let pinMode='unlock',pinValue='',pinFirst='';
+function askPin(mode){
+  pinMode=mode;pinValue='';pinFirst='';
+  const titles={unlock:'Unlock vault',setup:'Choose a PIN',change:'New PIN'};
+  $('pinTitle').textContent=titles[mode];
+  $('pinSubtitle').textContent='4–8 digits';
+  $('pinErr').style.display='none';
+  updatePinDisp();
+  $('pinModal').classList.add('on')
+}
+function pinKey(d){if(pinValue.length<8){pinValue+=d;updatePinDisp()}}
+function pinBack(){pinValue=pinValue.slice(0,-1);updatePinDisp()}
+function pinCancel(){$('pinModal').classList.remove('on')}
+function updatePinDisp(){$('pinDisp').textContent='•'.repeat(pinValue.length)}
+
+async function pinSubmit(){
+  if(pinValue.length<4){pinErr('Min 4 digits');return}
+  if(pinMode==='setup'||pinMode==='change'){
+    if(!pinFirst){pinFirst=pinValue;pinValue='';updatePinDisp();
+      $('pinSubtitle').textContent='Confirm PIN';return}
+    if(pinFirst!==pinValue){pinErr('PINs do not match');pinFirst='';pinValue='';updatePinDisp();
+      $('pinSubtitle').textContent='4–8 digits';return}
+    const {hash,salt}=await hashPin(pinValue);
+    localStorage.setItem(K_AUTH,JSON.stringify({hash,salt}));
+    $('pinModal').classList.remove('on');
+    unlocked=true;renderVault();toast('PIN saved');
+  } else {
+    const ok=await verifyPin(pinValue);
+    if(!ok){pinErr('Wrong PIN');pinValue='';updatePinDisp();return}
+    $('pinModal').classList.remove('on');
+    unlocked=true;renderVault();toast('Unlocked')
   }
+}
+function pinErr(msg){const e=$('pinErr');e.textContent=msg;e.style.display='block'}
 
-  function go(id, btn) {
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
-    document.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
-    document.getElementById('p-' + id).classList.add('on');
-    btn.classList.add('on');
+async function hashPin(pin,saltHex){
+  const enc=new TextEncoder();
+  const salt=saltHex?hex2buf(saltHex):crypto.getRandomValues(new Uint8Array(16));
+  const key=await crypto.subtle.importKey('raw',enc.encode(pin),{name:'PBKDF2'},false,['deriveBits']);
+  const bits=await crypto.subtle.deriveBits(
+    {name:'PBKDF2',salt,iterations:120000,hash:'SHA-256'},key,256);
+  return {hash:buf2hex(bits),salt:saltHex||buf2hex(salt)}
+}
+async function verifyPin(pin){
+  const a=JSON.parse(localStorage.getItem(K_AUTH)||'null');if(!a)return false;
+  const {hash}=await hashPin(pin,a.salt);return hash===a.hash
+}
+function buf2hex(b){return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+function hex2buf(h){const a=new Uint8Array(h.length/2);for(let i=0;i<a.length;i++)a[i]=parseInt(h.substr(i*2,2),16);return a}
+
+/* ───────── Vault: WebAuthn (biometrics) ───────── */
+async function enrollBio(){
+  if(!('credentials' in navigator)||!window.PublicKeyCredential){toast('Not supported here');return}
+  if(!hasAuth()){toast('Set up PIN first');return}
+  try{
+    const challenge=crypto.getRandomValues(new Uint8Array(32));
+    const userId=crypto.getRandomValues(new Uint8Array(16));
+    const cred=await navigator.credentials.create({publicKey:{
+      challenge,
+      rp:{name:'Vault PWA'},
+      user:{id:userId,name:'vault@local',displayName:'Vault user'},
+      pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
+      authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',residentKey:'preferred'},
+      timeout:60000,attestation:'none'
+    }});
+    if(cred){localStorage.setItem(K_BIO,buf2hex(cred.rawId));toast('Biometrics enrolled');renderVault()}
+  }catch(e){toast('Enrollment cancelled')}
+}
+async function bioUnlock(){
+  const idHex=localStorage.getItem(K_BIO);
+  if(!idHex){
+    if(!hasAuth()){toast('Set up PIN first');return}
+    return enrollBio()
   }
-
-  function prevMonth() { mo--; if (mo < 0) { mo = 11; yr--; } render(); }
-  function nextMonth() { mo++; if (mo > 11) { mo = 0; yr++; } render(); }
-
-  function addShift() {
-    const date  = document.getElementById('sDate').value;
-    const start = document.getElementById('sStart').value;
-    const end   = document.getElementById('sEnd').value;
-    const brk   = parseInt(document.getElementById('sBreak').value) || 0;
-    if (!date || !start || !end) { err('sErr','Vul datum, begin- en eindtijd in.'); return; }
-    const sm = toMin(start);
-    let   em = toMin(end);
-    if (em <= sm) em += 1440;
-    const paid = em - sm - brk;
-    if (paid <= 0) { err('sErr','Betaalde uren zijn 0 of negatief.'); return; }
-    noErr('sErr');
-    shifts.push({ date, start, end, brk, paid });
-    shifts.sort((a,b) => a.date.localeCompare(b.date));
-    localStorage.setItem(SK, JSON.stringify(shifts));
-    const d = new Date(date + 'T00:00:00'); yr = d.getFullYear(); mo = d.getMonth();
-    render();
+  try{
+    const challenge=crypto.getRandomValues(new Uint8Array(32));
+    const assertion=await navigator.credentials.get({publicKey:{
+      challenge,
+      allowCredentials:[{type:'public-key',id:hex2buf(idHex)}],
+      userVerification:'required',timeout:60000
+    }});
+    if(assertion){unlocked=true;renderVault();toast('Unlocked')}
+  }catch(e){
+    $('vaultStatus').textContent='Biometric prompt cancelled or unavailable. Try PIN.'
   }
+}
 
-  function delShift(i) { shifts.splice(i,1); localStorage.setItem(SK, JSON.stringify(shifts)); render(); }
+/* ───────── Vault: Documents ───────── */
+function addDoc(ev){
+  if(!unlocked){toast('Unlock vault first');return}
+  const files=[...ev.target.files];
+  if(!files.length)return;
+  Promise.all(files.map(f=>new Promise(res=>{
+    const r=new FileReader();
+    r.onload=()=>res({id:uid(),name:f.name,type:f.type,size:f.size,data:r.result,added:now()});
+    r.readAsDataURL(f)
+  }))).then(results=>{
+    docs=[...results,...docs];save(K_DOCS,docs);renderVault();toast(results.length+' file(s) added');
+    ev.target.value=''
+  })
+}
+function delDoc(id){if(!confirm('Delete this document?'))return;
+  docs=docs.filter(d=>d.id!==id);save(K_DOCS,docs);renderVault()}
+function viewDoc(id){
+  const d=docs.find(x=>x.id===id);if(!d)return;
+  const w=window.open('','_blank');
+  if(d.type.startsWith('image/'))w.document.write(`<img src="${d.data}" style="max-width:100%">`);
+  else w.location.href=d.data
+}
 
-  function addExtra() {
-    const date = document.getElementById('eDate').value;
-    const type = document.getElementById('eType').value;
-    const desc = document.getElementById('eDesc').value.trim();
-    const amt  = parseFloat(document.getElementById('eAmt').value);
-    if (!date)           { err('eErr','Vul een datum in.'); return; }
-    if (!amt || amt <= 0){ err('eErr','Vul een geldig bedrag in.'); return; }
-    noErr('eErr');
-    extras.push({ date, type, desc: desc || type, amt });
-    extras.sort((a,b) => a.date.localeCompare(b.date));
-    localStorage.setItem(EK, JSON.stringify(extras));
-    document.getElementById('eAmt').value  = '';
-    document.getElementById('eDesc').value = '';
-    const d = new Date(date+'T00:00:00'); yr = d.getFullYear(); mo = d.getMonth();
-    render();
+function renderVault(){
+  if(!unlocked){
+    $('vaultLocked').style.display='block';$('vaultUnlocked').style.display='none';
+    $('lockBtn').style.display='none';
+    $('vaultStatus').textContent=hasAuth()?'':'No PIN set yet. Set one up first.';
+    $('bioBtn').textContent=localStorage.getItem(K_BIO)?'👆 Biometrics':'👆 Enroll & unlock';
+    return
   }
+  $('vaultLocked').style.display='none';$('vaultUnlocked').style.display='block';
+  $('lockBtn').style.display='inline-block';
 
-  function delExtra(i) { extras.splice(i,1); localStorage.setItem(EK, JSON.stringify(extras)); render(); }
+  $('dCount').textContent=docs.length?`(${docs.length})`:'';
+  $('docList').innerHTML=docs.length?docs.map(d=>`
+    <div class="item">
+      <div class="doc-thumb">${d.type.startsWith('image/')?`<img src="${d.data}">`:icon(d.type)}</div>
+      <div class="item-body" onclick="viewDoc('${d.id}')" style="cursor:pointer">
+        <div class="item-title">${esc(d.name)}</div>
+        <div class="item-sub">${(d.size/1024).toFixed(0)} KB · ${fmtDateOnly(new Date(d.added).toISOString())}</div>
+      </div>
+      <div class="item-actions"><button class="btn-icon" onclick="delDoc('${d.id}')">✕</button></div>
+    </div>`).join(''):'<div class="empty">No documents yet</div>';
 
-  function toMin(t) { const [h,m] = t.split(':').map(Number); return h*60+m; }
-  function fmtH(m) { m=m||0; return `${Math.floor(m/60)}u ${m%60}m`; }
-  function fmtE(n) { n=n||0; return '€ ' + n.toFixed(2).replace('.',','); }
-  function fmtD(s) { return new Date(s+'T00:00:00').toLocaleDateString('nl-NL',{weekday:'short',day:'numeric',month:'short'}); }
-  function err(id,msg)  { const e=document.getElementById(id); e.textContent=msg; e.style.display='block'; }
-  function noErr(id)    { document.getElementById(id).style.display='none'; }
+  const ln=notes.filter(n=>n.locked);
+  $('lockedNotes').innerHTML=ln.length?ln.map(n=>`
+    <div class="item">
+      <div class="item-body">
+        <div class="item-title">${esc(n.title)} <span class="badge badge-locked">locked</span></div>
+        <div class="item-sub" style="white-space:pre-wrap;color:#94a3b8;margin-top:4px">${esc(n.body).slice(0,160)}${n.body.length>160?'…':''}</div>
+      </div>
+      <div class="item-actions">
+        <div class="item-actions-row">
+          <button class="btn-icon toggle" onclick="toggleNoteLock('${n.id}')" title="Move out">🔓</button>
+          <button class="btn-icon" onclick="delNote('${n.id}')">✕</button>
+        </div>
+      </div>
+    </div>`).join(''):'<div class="empty">No locked notes</div>';
 
-  function render() {
-    const rate   = parseFloat(document.getElementById('rate').value)   || 16.50;
-    const vacpct = parseFloat(document.getElementById('vacpct').value) / 100 || 0.08;
-    document.getElementById('monthLabel').textContent = `${MO[mo]} ${yr}`;
+  const lr=rems.filter(r=>r.locked);
+  $('lockedRems').innerHTML=lr.length?lr.map(r=>`
+    <div class="item">
+      <div class="item-body">
+        <div class="item-title">${esc(r.title)} <span class="badge badge-locked">locked</span></div>
+        <div class="item-sub">${fmtDateTime(new Date(r.when).toISOString())}</div>
+      </div>
+      <div class="item-actions"><button class="btn-icon" onclick="delRem('${r.id}')">✕</button></div>
+    </div>`).join(''):'<div class="empty">No locked reminders</div>';
+}
 
-    const ms = shifts.map((s,i)=>({...s,i})).filter(s=>{
-      const d = new Date(s.date+'T00:00:00');
-      return d.getFullYear()===yr && d.getMonth()===mo;
-    });
+function icon(t){
+  if(t.startsWith('image/'))return '🖼️';
+  if(t==='application/pdf')return '📕';
+  if(t.includes('word'))return '📘';
+  if(t.startsWith('text/'))return '📄';
+  return '📎'
+}
 
-    const totMin = ms.reduce((a,s)=>a+s.paid, 0);
-    const gross  = (totMin/60)*rate;
+function lockVault(){unlocked=false;renderVault();toast('Vault locked')}
+function resetVault(){
+  if(!confirm('Delete ALL vault data: PIN, biometrics, documents, locked notes & reminders?'))return;
+  if(!confirm('Are you absolutely sure? This cannot be undone.'))return;
+  localStorage.removeItem(K_AUTH);localStorage.removeItem(K_BIO);
+  docs=[];save(K_DOCS,docs);
+  notes=notes.filter(n=>!n.locked);save(K_NOTES,notes);
+  rems=rems.filter(r=>!r.locked);save(K_REMS,rems);
+  unlocked=false;renderVault();renderNotes();renderRems();toast('Vault reset')
+}
 
-    // extras for this month
-    const es = extras.map((e,i)=>({...e,i})).filter(e=>{
-      const d = new Date(e.date+'T00:00:00');
-      return d.getFullYear()===yr && d.getMonth()===mo;
-    });
-    const extSum = es.reduce((a,e)=>a+e.amt, 0);
+/* Auto-lock when leaving */
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&unlocked)lockVault()});
 
-    document.getElementById('d-uren').textContent  = fmtH(totMin);
-    document.getElementById('d-gross').textContent = fmtE(gross);
+/* ───────── Backup ───────── */
+function exportData(){
+  const all={notes,shop,wish,docs,rems,
+    auth:localStorage.getItem(K_AUTH),bio:localStorage.getItem(K_BIO),
+    exported:new Date().toISOString()};
+  downloadFile(JSON.stringify(all,null,2),'vault_backup_'+new Date().toISOString().slice(0,10)+'.json','application/json');
+  toast('Backup downloaded')
+}
+function importData(ev){
+  const f=ev.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const d=JSON.parse(r.result);
+      if(!confirm('Import will OVERWRITE all current data. Continue?'))return;
+      if(d.notes)save(K_NOTES,notes=d.notes);
+      if(d.shop)save(K_SHOP,shop=d.shop);
+      if(d.wish)save(K_WISH,wish=d.wish);
+      if(d.docs)save(K_DOCS,docs=d.docs);
+      if(d.rems)save(K_REMS,rems=d.rems);
+      if(d.auth)localStorage.setItem(K_AUTH,d.auth);
+      if(d.bio)localStorage.setItem(K_BIO,d.bio);
+      renderAll();toast('Imported')
+    }catch(e){toast('Invalid backup file')}
+  };r.readAsText(f);ev.target.value=''
+}
 
-    if (!ms.length) {
-      document.getElementById('shiftTbl').innerHTML = '<div class="empty">Nog geen diensten deze maand</div>';
-    } else {
-      document.getElementById('shiftTbl').innerHTML = `
-        <table><thead><tr>
-          <th>Datum</th><th>Tijden</th><th>Pauze</th><th>Uren</th><th>Bruto</th><th></th>
-        </tr></thead><tbody>
-        ${ms.map(s=>`<tr>
-          <td>${fmtD(s.date)}</td>
-          <td style="white-space:nowrap">${s.start}–${s.end}</td>
-          <td>${s.brk}m</td>
-          <td class="c-purple">${fmtH(s.paid)}</td>
-          <td class="c-green">${fmtE((s.paid/60)*rate)}</td>
-          <td><button class="btn-del" onclick="delShift(${s.i})">✕</button></td>
-        </tr>`).join('')}
-        </tbody></table>`;
-    }
+/* ───────── Helpers ───────── */
+function esc(s){return (s==null?'':String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 
-    // ── Vakantiegeld tab ──
-    const MO_S = ['Jan','Feb','Mrt','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];
-    const yearVac = shifts
-      .filter(s => new Date(s.date+'T00:00:00').getFullYear() === yr)
-      .reduce((a,s) => a + (s.paid/60)*rate*vacpct, 0);
+function renderAll(){renderNotes();renderShop();renderWish();renderRems();renderVault()}
 
-    document.getElementById('vac-year').textContent = fmtE(yearVac);
-    document.getElementById('vac-year-sub').textContent = `over alle maanden in ${yr}`;
-    document.getElementById('vac-year-num').textContent = yr;
+function init(){
+  const today=new Date().toISOString().slice(0,10);
+  $('rDate').value=today;
+  const t=new Date(now()+60*60*1000);
+  $('rTime').value=pad(t.getHours())+':'+pad(t.getMinutes());
+  renderAll();scheduleAll();updatePermNote();
 
-    document.getElementById('vac-month-breakdown').innerHTML = `
-      <div class="brow"><span class="brow-lbl">Bruto uurloon deze maand</span><span class="brow-val">${fmtE(gross)}</span></div>
-      <div class="brow"><span class="brow-lbl">Vakantiegeld (${(vacpct*100).toFixed(1)}%)</span><span class="brow-val" style="color:#fbbf24;">${fmtE(gross*vacpct)}</span></div>`;
-
-    const perMo = Array(12).fill(0);
-    shifts.forEach(s => {
-      const d = new Date(s.date+'T00:00:00');
-      if (d.getFullYear() === yr) perMo[d.getMonth()] += (s.paid/60)*rate*vacpct;
-    });
-    document.getElementById('vac-grid').innerHTML = MO_S.map((m,i) => {
-      const val = perMo[i];
-      const cur = i === mo;
-      const empty = val === 0;
-      return `<div class="mg-item${cur?' cur':''}${empty?' empty':''}">
-        <div class="mg-name">${m}</div>
-        <div class="mg-val">${empty ? '–' : fmtE(val)}</div>
-      </div>`;
-    }).join('');
-
-    // ── Extra's tab ──
-    document.getElementById('e-total').textContent = fmtE(extSum);
-    const byType = {};
-    es.forEach(e => { byType[e.type] = (byType[e.type]||0) + e.amt; });
-    const parts = Object.entries(byType).map(([t,v])=>`${t}: ${fmtE(v)}`);
-    document.getElementById('e-sub').textContent = parts.length ? parts.join(' · ') : 'geen extra\'s ingevoerd';
-
-    if (!es.length) {
-      document.getElementById('extraTbl').innerHTML = '<div class="empty">Nog geen extra\'s deze maand</div>';
-    } else {
-      document.getElementById('extraTbl').innerHTML = `
-        <table><thead><tr>
-          <th>Datum</th><th>Type</th><th>Omschrijving</th><th>Bedrag</th><th></th>
-        </tr></thead><tbody>
-        ${es.map(e=>`<tr>
-          <td>${fmtD(e.date)}</td>
-          <td><span class="badge badge-${e.type}">${e.type}</span></td>
-          <td style="color:#94a3b8">${e.desc}</td>
-          <td class="c-amber">${fmtE(e.amt)}</td>
-          <td><button class="btn-del" onclick="delExtra(${e.i})">✕</button></td>
-        </tr>`).join('')}
-        </tbody></table>`;
-    }
-
-    // ── Totaal tab ──
-    const vac   = gross * vacpct;
-    const total = gross + vac + extSum;
-
-    document.getElementById('t-grand').textContent    = fmtE(total);
-    document.getElementById('t-period').textContent   = `${MO[mo]} ${yr}`;
-    document.getElementById('t-gross').textContent    = fmtE(gross);
-    document.getElementById('t-vac-lbl').textContent  = `Vakantiegeld (${(vacpct*100).toFixed(1)}%)`;
-    document.getElementById('t-vac').textContent      = fmtE(vac);
-    document.getElementById('t-ext').textContent      = fmtE(extSum);
-    document.getElementById('t-total').textContent    = fmtE(total);
-    document.getElementById('t-uren').textContent     = fmtH(totMin);
-    document.getElementById('t-diensten').textContent = ms.length;
-    document.getElementById('t-vacstat').textContent  = fmtE(vac);
-    document.getElementById('t-extstat').textContent  = fmtE(extSum);
-  }
-
-  document.getElementById('rate').addEventListener('input', render);
-  document.getElementById('vacpct').addEventListener('input', render);
-
-  init();
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
+  if(!('PublicKeyCredential' in window))$('bioBtn').style.opacity=0.5;
+  if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+init();
 </script>
 </body>
 </html>
