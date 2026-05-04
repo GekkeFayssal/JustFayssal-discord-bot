@@ -1,12 +1,15 @@
 {
-  "name": "Loon Calculator",
-  "short_name": "Loon Calc",
-  "description": "Bereken je maandloon met uren en pauzes",
+  "name": "Vault — Personal Organizer",
+  "short_name": "Vault",
+  "description": "Notes, shopping, wishlist, reminders and a private vault for documents — all on your device.",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#0f1117",
-  "theme_color": "#6366f1",
-  "orientation": "portrait-primary",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "background_color": "#07090f",
+  "theme_color": "#7c3aed",
+  "orientation": "any",
+  "categories": ["productivity", "utilities", "lifestyle"],
   "icons": [
     {
       "src": "icon-192.png",
@@ -20,5 +23,11 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
+  ],
+  "shortcuts": [
+    { "name": "New note",    "url": "./index.html#notes", "short_name": "Note" },
+    { "name": "Shopping",    "url": "./index.html#shop",  "short_name": "Shop" },
+    { "name": "Reminders",   "url": "./index.html#rem",   "short_name": "Remind" },
+    { "name": "Vault",       "url": "./index.html#vault", "short_name": "Vault" }
   ]
 }
